@@ -1,0 +1,37 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  text           String
+  image          String?
+  status         MessageStatus @default(SENT)
+  senderId       String
+  senderName     String?
+  senderUsername String?
+  senderAvatar   String?
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime      @default(now())
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  name         String?
+  isGroup      Boolean   @default(false)
+  messages     Message[]
+  participants String[]
+  createdAt    DateTime  @default(now())
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
