@@ -32,7 +32,6 @@ export function useChat() {
         });
         console.log(response.data);
 
-        // Add default values for fields that might not be in the API response
         const processedChats = response.data.map((chat: any) => ({
           ...chat,
           online: chat.online || false,
