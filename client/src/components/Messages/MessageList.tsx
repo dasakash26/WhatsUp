@@ -3,7 +3,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronUp } from "lucide-react";
 import { RefObject, useRef, useState } from "react";
 import { MessageBubble } from "./MessageBubble";
-import { TypingIndicator } from "./TypingIndicator";
 import { Message } from "@/types";
 
 interface MessageListProps {
@@ -18,7 +17,6 @@ interface MessageListProps {
 export function MessageList({
   messages,
   currentUserId,
-  activeChatName,
   formatMessageTime,
   messagesEndRef,
   setIsAtBottom,
@@ -78,8 +76,6 @@ export function MessageList({
                 formatMessageTime={formatMessageTime}
               />
             ))}
-
-            <TypingIndicator name={activeChatName} isTyping={isTyping} />
 
             {/* Add an empty div at the end to scroll to */}
             <div ref={messagesEndRef} />

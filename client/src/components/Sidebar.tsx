@@ -1,49 +1,56 @@
-import { useChat } from "@/contexts/ChatContext";
-import { cn } from "../lib/utils";
-import { Search, User, Users, X, Plus, FilterIcon } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { X, Search } from "lucide-react";
+import { useChat } from "@/contexts/ChatContext";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/clerk-react";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChatSkeleton } from "@/components/chat/ChatSkeleton";
+import { ChatListItem } from "@/components/chat/ChatListItem";
+import { SearchBar } from "@/components/chat/SearchBar";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
   isMobileOpen?: boolean;
   onMobileClose?: () => void;
 }
 
-const ChatSkeleton = () => (
-  <div className="p-3 flex items-center gap-3">
-    <Skeleton className="h-12 w-12 rounded-full" />
-    <div className="space-y-2 flex-1">
-      <div className="flex justify-between">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-3 w-10" />
-      </div>
-      <Skeleton className="h-3 w-32" />
-    </div>
-  </div>
-);
-
 export function Sidebar({
   className,
-  isMobileOpen,
+  isMobileOpen = false,
   onMobileClose,
   ...props
 }: SidebarProps) {
-  const { chats, isLoading, activeChat, setActiveChat } = useChat();
+  const [isLoading, setIsLoading] = useState(true);
+  const {
+    currentConversationId,
+    setCurrentConversationId,
+    conversations,
+    loadConversations,
+  } = useChat();
+  const { userId } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const { userId } = useAuth();
 
-  // Fix state management issue by properly tracking the visibility state
   useEffect(() => {
-    // Ensure proper visibility on mount and state changes
+    // Load conversations from the API via ChatContext
+    const fetchConversations = async () => {
+      setIsLoading(true);
+      try {
+        await loadConversations();
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching conversations:", error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [loadConversations]);
+
+  useEffect(() => {
     if (window.innerWidth >= 768 || isMobileOpen) {
       setIsVisible(true);
     } else {
@@ -65,29 +72,14 @@ export function Sidebar({
 
   // Filter chats based on search term
   const filteredChats = searchTerm
-    ? chats.filter((chat) =>
+    ? conversations.filter((chat) =>
         chat.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : chats;
-
-  const formatTime = (time: string | null) => {
-    if (!time) return "";
-
-    try {
-      const date = new Date(time);
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      console.error("Error formatting time:", error);
-      return "";
-    }
-  };
+    : conversations;
 
   // Handle chat selection and close sidebar on mobile
-  const handleChatSelection = (chat: any) => {
-    setActiveChat(chat);
+  const handleChatSelection = (chatId: string) => {
+    setCurrentConversationId(chatId);
     if (isMobileOpen && onMobileClose) {
       onMobileClose();
     }
@@ -110,13 +102,12 @@ export function Sidebar({
         className={cn(
           "bg-background h-full flex flex-col border-r",
           isMobileOpen ? "left-0" : "-left-full md:left-0",
-          "fixed md:static z-50 w-[280px] max-w-[85%] md:max-w-none md:w-auto shadow-lg md:shadow-none",
+          "fixed md:static z-50 w-[320px] max-w-[90%] md:max-w-none md:w-auto shadow-lg md:shadow-none",
           "transition-[left] duration-300 ease-in-out",
           className
         )}
         {...props}
       >
-        {/* Mobile header */}
         <div className="bg-gradient-to-r from-primary to-primary/90 p-4 text-primary-foreground flex justify-between items-center md:hidden">
           <h2 className="font-bold text-xl">WhatsUp</h2>
           <Button
@@ -130,20 +121,7 @@ export function Sidebar({
           </Button>
         </div>
 
-        <div className="p-3 pb-4 border-b flex items-center justify-between gap-2">
-          {/* Search section */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="Search chats..."
-              className="pl-9 pr-4 w-full rounded-full bg-accent/40 focus:bg-accent/60 transition-colors"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <FilterIcon className="h-5 w-5 text-muted-foreground" />
-        </div>
+        <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
         <ScrollArea className="flex-1">
           <div className="space-y-1 p-2">
@@ -159,79 +137,13 @@ export function Sidebar({
             ) : filteredChats.length > 0 ? (
               // Chat list
               filteredChats.map((chat) => (
-                <Card
+                <ChatListItem
                   key={chat.id}
-                  className={cn(
-                    "p-0 overflow-hidden hover:bg-accent/50 cursor-pointer transition-all duration-200 border-0",
-                    "transform hover:-translate-y-[1px] active:translate-y-[1px]",
-                    activeChat?.id === chat.id && "bg-accent shadow-md"
-                  )}
-                  onClick={() => handleChatSelection(chat)}
-                >
-                  {/* Chat item content */}
-                  <div className="p-3 flex items-center gap-3">
-                    {/* Avatar section */}
-                    <div className="relative flex-shrink-0">
-                      <Avatar className="h-12 w-12 border border-border shadow-sm">
-                        {/* Avatar fallback */}
-                        {chat.isGroup ? (
-                          <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
-                            <Users className="h-6 w-6" />
-                          </AvatarFallback>
-                        ) : (
-                          <AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/70 text-secondary-foreground">
-                            <User className="h-5 w-5" />
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-                      {/* Online indicator */}
-                      {chat.online && (
-                        <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background animate-pulse" />
-                      )}
-                    </div>
-
-                    {/* Chat details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <div className="font-medium text-foreground flex items-center gap-1 truncate">
-                          <span className="truncate">{chat.name}</span>
-                          {chat.isGroup && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs ml-1 py-0 h-5"
-                            >
-                              Group
-                            </Badge>
-                          )}
-                        </div>
-                        {/* Timestamp */}
-                        {chat.lastMessageTime && (
-                          <span className="text-xs text-muted-foreground whitespace-nowrap ml-1">
-                            {formatTime(chat.lastMessageTime)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Last message with sender indication for groups */}
-                      <div className="text-xs text-muted-foreground truncate mt-1">
-                        {chat.isGroup && chat.lastMessageSenderId && (
-                          <span
-                            className={
-                              chat.lastMessageSenderId === userId
-                                ? "text-primary font-medium"
-                                : "font-medium"
-                            }
-                          >
-                            {chat.lastMessageSenderId === userId
-                              ? "You: "
-                              : "Someone: "}
-                          </span>
-                        )}
-                        {chat.lastMessage || "No messages yet"}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
+                  chat={chat}
+                  isActive={currentConversationId === chat.id}
+                  userId={userId ?? null}
+                  onClick={() => handleChatSelection(chat.id)}
+                />
               ))
             ) : (
               // Empty state

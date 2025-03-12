@@ -8,6 +8,9 @@ interface ExtendedConversation {
   lastMessage?: string | null;
   lastMessageTime?: Date | null;
   lastMessageSenderId?: string | null;
+  lastMessageSenderName?: string | null;
+  lastMessageSenderUsername?: string | null;
+  lastMessageSenderAvatar?: string | null;
 }
 
 export const getConversations = expressAsyncHandler(
@@ -25,28 +28,59 @@ export const getConversations = expressAsyncHandler(
         messages: true,
       },
     });
+    for (const conversation of conversations) {
+      if (conversation.isGroup === false) {
+        const otherParticipant =
+          userId === conversation.participants[0]
+            ? conversation.participants[1]
+            : conversation.participants[0];
+        const userData = await clerkClient.users.getUser(otherParticipant);
+        conversation.name = userData.firstName
+          ? `${userData.firstName} ${userData.lastName}`
+          : userData.username;
+      }
+    }
 
     for (const conversation of conversations) {
       const extendedConvo = conversation as unknown as ExtendedConversation;
 
       if (conversation.messages.length > 0) {
-        // Sort messages by creation time to ensure we get the latest
-        const sortedMessages = [...conversation.messages].sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        const lastMessage = sortedMessages[0];
-
-        // Add properly formatted last message data
+        const sortedMessages = [...conversation.messages];
+        const lastMessage = sortedMessages[sortedMessages.length - 1];
         extendedConvo.lastMessage = lastMessage.text;
-        extendedConvo.lastMessageTime = lastMessage.createdAt;
+        extendedConvo.lastMessageTime = new Date(lastMessage.createdAt);
         extendedConvo.lastMessageSenderId = lastMessage.senderId;
+
+        // Add sender information for the last message
+        if (lastMessage.senderId) {
+          try {
+            const senderData = await clerkClient.users.getUser(
+              lastMessage.senderId
+            );
+            extendedConvo.lastMessageSenderName =
+              senderData.firstName && senderData.lastName
+                ? `${senderData.firstName} ${senderData.lastName}`
+                : null;
+            extendedConvo.lastMessageSenderUsername =
+              senderData.username || null;
+            extendedConvo.lastMessageSenderAvatar = senderData.imageUrl || null;
+          } catch (error) {
+            console.error(
+              `Error fetching sender data for ID ${lastMessage.senderId}:`,
+              error
+            );
+            extendedConvo.lastMessageSenderName = null;
+            extendedConvo.lastMessageSenderUsername = null;
+            extendedConvo.lastMessageSenderAvatar = null;
+          }
+        }
       } else {
-        // Handle conversations with no messages
         extendedConvo.lastMessage = null;
         extendedConvo.lastMessageTime = null;
         extendedConvo.lastMessageSenderId = null;
+        extendedConvo.lastMessageSenderName = null;
+        extendedConvo.lastMessageSenderUsername = null;
+        extendedConvo.lastMessageSenderAvatar = null;
       }
     }
 
@@ -85,7 +119,7 @@ export const createConversation = expressAsyncHandler(
     if (!participants || participants.length === 0) {
       throw new Error("Participants are required");
     }
-
+    participants.filter((participant: string) => participant !== userId);
     const users = await clerkClient.users.getUserList({
       username: participants,
     });

@@ -8,14 +8,13 @@ import { MessageCircle, Plus } from "lucide-react";
 import { ModeToggle } from "./theme/mode-toggle";
 import { cn } from "../lib/utils";
 import { Button } from "./ui/button";
-import { CreateConversationDialog } from "./Dialog/CreateConvDialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
-import { Separator } from "@radix-ui/react-dropdown-menu";
+import { CreateConvDialog } from "./Dialog/CreateConvDialog";
 
 export function Header() {
   return (
@@ -40,11 +39,12 @@ export function Header() {
         >
           WhatsUp
         </span>
+        <div className="w-10 h-px bg-gradient-to-r from-transparent via-border to-transparent my-2"></div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="mt-2">
-                <CreateConversationDialog />
+                <CreateConvDialog />
               </div>
             </TooltipTrigger>
             <TooltipContent side="right">
@@ -53,9 +53,6 @@ export function Header() {
           </Tooltip>
         </TooltipProvider>
       </div>
-
-      {/* Visual separator */}
-      <div className="w-8 h-px bg-gradient-to-r from-transparent via-border to-transparent my-2"></div>
 
       <div className="flex flex-col items-center gap-4 md:gap-5 mt-auto z-10">
         <TooltipProvider>

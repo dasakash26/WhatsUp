@@ -1,19 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PaperclipIcon, Send, SmileIcon } from "lucide-react";
-import { RefObject } from "react";
+import { RefObject, useEffect, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useChat } from "@/contexts/ChatContext";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface ChatInputProps {
   inputMessage: string;
   setInputMessage: (value: string) => void;
   handleSendMessage: () => void;
   inputRef: RefObject<HTMLInputElement>;
+  isConnected?: boolean;
+  conversationId: string;
 }
 
 export function ChatInput({
@@ -21,13 +25,61 @@ export function ChatInput({
   setInputMessage,
   handleSendMessage,
   inputRef,
+  conversationId,
 }: ChatInputProps) {
+  const [isTyping, setIsTyping] = useState(false);
+  const { setTyping } = useChat();
+
+  // Stop typing after user stops typing for 2 seconds
+  useDebounce(
+    () => {
+      if (conversationId && isTyping) {
+        setTyping(conversationId, false);
+        setIsTyping(false);
+      }
+    },
+    2000,
+    [isTyping, conversationId]
+  );
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputMessage(newValue);
+
+    if (!conversationId) return;
+
+    if (newValue.length > 0 && !isTyping) {
+      setIsTyping(true);
+      setTyping(conversationId, true);
+    } else if (newValue.length === 0 && isTyping) {
+      setIsTyping(false);
+      setTyping(conversationId, false);
+    }
+  };
+
+  // Cleanup typing state when unmounting or switching conversations
+  useEffect(() => {
+    return () => {
+      if (isTyping && conversationId) {
+        setTyping(conversationId, false);
+      }
+    };
+  }, [isTyping, conversationId, setTyping]);
+
+  // Reset typing state when conversation changes
+  useEffect(() => {
+    if (isTyping) {
+      setIsTyping(false);
+      setTyping(conversationId, false);
+    }
+  }, [conversationId]);
 
   return (
     <div className="p-3 border-t border-border bg-background/95 backdrop-blur-sm">
@@ -54,7 +106,7 @@ export function ChatInput({
             placeholder="Type a message..."
             className="w-full px-4 py-2.5 rounded-full bg-accent/50 border border-input focus:outline-none focus:ring-1 focus:ring-ring pr-10"
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyPress}
           />
           <Button

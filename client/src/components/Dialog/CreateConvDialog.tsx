@@ -1,4 +1,4 @@
-import { useState, KeyboardEvent } from "react";
+import { useState, KeyboardEvent, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,17 +12,36 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Plus, Loader2, UserPlus } from "lucide-react";
+import { X, Plus, Loader2, Users, MessageSquare } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@clerk/clerk-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useChat } from "@/contexts/ChatContext";
 
-export function CreateConversationDialog() {
+type ConversationType = "direct" | "group";
+
+export function CreateConvDialog() {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
+  const [activeTab, setActiveTab] = useState<ConversationType>("direct");
+  const [groupName, setGroupName] = useState("");
   const [participant, setParticipant] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { getToken } = useAuth();
+  const { loadConversations } = useChat();
+
+  // Reset states when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setActiveTab("direct");
+      setGroupName("");
+      setParticipant("");
+      setParticipants([]);
+    }
+  }, [open]);
+
   const handleAddParticipant = () => {
     if (participant.trim()) {
       // Prevent duplicates
@@ -43,15 +62,23 @@ export function CreateConversationDialog() {
   };
 
   const handleSubmit = async () => {
-    // Basic validation
-    if (!name.trim()) {
-      toast.error("Please enter a name for the conversation");
+    if (activeTab === "direct" && participants.length !== 1) {
+      toast.error("Please add exactly one participant for direct messages");
       return;
     }
 
-    if (participants.length === 0) {
-      toast.error("Please add at least one participant");
-      return;
+    if (activeTab === "group") {
+      if (participants.length < 2) {
+        toast.error(
+          "Please add at least two participants for group conversations"
+        );
+        return;
+      }
+
+      if (!groupName.trim()) {
+        toast.error("Please enter a name for the group conversation");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -61,8 +88,9 @@ export function CreateConversationDialog() {
       await api.post(
         "/conversation",
         {
-          name,
+          name: activeTab === "direct" ? "Direct Message" : groupName,
           participants,
+          type: activeTab,
         },
         {
           headers: {
@@ -71,15 +99,13 @@ export function CreateConversationDialog() {
         }
       );
 
-      toast.success("Conversation created successfully!");
-
-      // Reset the form
-      setName("");
-      setParticipant("");
-      setParticipants([]);
-
-      // Close the dialog
+      toast.success(
+        `${
+          activeTab === "direct" ? "Direct message" : "Group conversation"
+        } created successfully!`
+      );
       setOpen(false);
+      await loadConversations();
     } catch (error: any) {
       console.error("Failed to create conversation:", error);
       toast.error(
@@ -91,90 +117,136 @@ export function CreateConversationDialog() {
     }
   };
 
+  const renderParticipantsList = () => {
+    if (participants.length === 0) return null;
+
+    return (
+      <div className="mt-4">
+        <Label className="text-sm text-muted-foreground mb-2 block">
+          {participants.length}{" "}
+          {participants.length === 1 ? "Participant" : "Participants"}
+        </Label>
+        <ScrollArea className="h-[100px] border rounded-md p-2">
+          <div className="flex flex-wrap gap-2">
+            {participants.map((p, index) => (
+              <Badge key={index} variant="secondary" className="py-1 gap-1">
+                {p}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 rounded-full"
+                  onClick={() => {
+                    setParticipants(participants.filter((_, i) => i !== index));
+                  }}
+                >
+                  <X size={10} />
+                </Button>
+              </Badge>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-secondary rounded-4xl p-6">
-          <UserPlus size={20} />
+        <Button className="gap-2 bg-secondary hover:bg-secondary/80">
+          <Plus size={20} />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Conversation</DialogTitle>
+          <DialogTitle>New Conversation</DialogTitle>
           <DialogDescription>
-            Enter a name for your conversation and add participants.
+            Create a new direct message or group conversation
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-5 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Conversation name"
-              className="col-span-3"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="participant" className="text-right">
-              Add User
-            </Label>
-            <div className="col-span-3 flex gap-2">
-              <Input
-                id="participant"
-                value={participant}
-                onChange={(e) => setParticipant(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="User ID "
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                onClick={handleAddParticipant}
-                size="sm"
-                disabled={!participant.trim()}
-                className="gap-1"
-              >
-                <Plus size={16} /> Add
-              </Button>
-            </div>
-          </div>
 
-          {participants.length > 0 && (
-            <div className="grid grid-cols-4 items-start gap-4">
-              <span className="text-right font-medium text-sm text-muted-foreground pt-1">
-                Participants:
-              </span>
-              <div className="col-span-3 flex flex-wrap gap-2 p-2 border rounded-md bg-muted/20">
-                {participants.map((p, index) => (
-                  <div
-                    key={index}
-                    className="bg-primary/10 border border-primary/20 px-2 py-1 rounded-md flex items-center text-sm"
-                  >
-                    {p}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 w-5 p-0 ml-1 text-muted-foreground hover:text-destructive rounded-full"
-                      onClick={() => {
-                        setParticipants(
-                          participants.filter((_, i) => i !== index)
-                        );
-                        toast.info(`Removed ${p} from participants`);
-                      }}
-                    >
-                      <X size={12} />
-                    </Button>
-                  </div>
-                ))}
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as ConversationType)}
+          className="w-full"
+        >
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="direct" className="flex gap-2 items-center">
+              <MessageSquare size={16} />
+              Direct Message
+            </TabsTrigger>
+            <TabsTrigger value="group" className="flex gap-2 items-center">
+              <Users size={16} />
+              Group Chat
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="direct" className="space-y-4">
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="direct-participant">Add User</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="direct-participant"
+                  placeholder="Enter user ID"
+                  value={participant}
+                  onChange={(e) => setParticipant(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={participants.length >= 1}
+                />
+                <Button
+                  onClick={handleAddParticipant}
+                  disabled={!participant.trim() || participants.length >= 1}
+                >
+                  Add
+                </Button>
               </div>
+              {participants.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add the user ID of the person you want to message
+                </p>
+              )}
+              {renderParticipantsList()}
             </div>
-          )}
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0">
+          </TabsContent>
+
+          <TabsContent value="group" className="space-y-4">
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="group-name">Group Name</Label>
+              <Input
+                id="group-name"
+                placeholder="Enter group name"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col space-y-1.5">
+              <Label htmlFor="group-participant">Add Participants</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="group-participant"
+                  placeholder="Enter user ID"
+                  value={participant}
+                  onChange={(e) => setParticipant(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+                <Button
+                  onClick={handleAddParticipant}
+                  disabled={!participant.trim()}
+                >
+                  Add
+                </Button>
+              </div>
+              {participants.length < 2 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add at least 2 participants to create a group
+                </p>
+              )}
+              {renderParticipantsList()}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter className="gap-2 pt-4 sm:gap-0">
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
@@ -184,7 +256,12 @@ export function CreateConversationDialog() {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting || !name.trim() || participants.length === 0}
+            disabled={
+              isSubmitting ||
+              (activeTab === "direct" && participants.length !== 1) ||
+              (activeTab === "group" &&
+                (participants.length < 2 || !groupName.trim()))
+            }
           >
             {isSubmitting ? (
               <>
@@ -192,7 +269,7 @@ export function CreateConversationDialog() {
                 Creating...
               </>
             ) : (
-              "Create Conversation"
+              "Create"
             )}
           </Button>
         </DialogFooter>

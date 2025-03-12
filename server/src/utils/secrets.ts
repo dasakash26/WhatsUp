@@ -8,6 +8,7 @@ const requiredEnvVars = [
   "CLERK_SECRET_KEY",
   "CLERK_PUBLISHABLE_KEY",
   "CLIENT_URL",
+  "CLERK_PEM_PUBLIC_KEY",
 ] as const;
 
 const checkEnvVariables = (vars: readonly string[]) => {
@@ -27,5 +28,6 @@ export const PORT = Number(process.env.PORT!);
 export const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY!;
 export const CLERK_PUBLISHABLE_KEY = process.env.CLERK_PUBLISHABLE_KEY!;
 export const CLIENT_URL = process.env.CLIENT_URL!;
+export const CLERK_PEM_PUBLIC_KEY = process.env.CLERK_PEM_PUBLIC_KEY!;
 
 console.log("> All required environment variables are set.");
