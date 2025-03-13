@@ -32,7 +32,6 @@ export function CreateConvDialog() {
   const { getToken } = useAuth();
   const { loadConversations } = useChat();
 
-  // Reset states when dialog closes
   useEffect(() => {
     if (!open) {
       setActiveTab("direct");
@@ -152,7 +151,10 @@ export function CreateConvDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 bg-secondary hover:bg-secondary/80">
+        <Button
+          className="gap-2 hover:bg-secondary/80 rounded-2xl"
+          variant={"outline"}
+        >
           <Plus size={20} />
         </Button>
       </DialogTrigger>
@@ -186,7 +188,7 @@ export function CreateConvDialog() {
               <div className="flex gap-2">
                 <Input
                   id="direct-participant"
-                  placeholder="Enter user ID"
+                  placeholder="Enter username"
                   value={participant}
                   onChange={(e) => setParticipant(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -201,7 +203,7 @@ export function CreateConvDialog() {
               </div>
               {participants.length === 0 && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Add the user ID of the person you want to message
+                  Add the username of the person you want to message
                 </p>
               )}
               {renderParticipantsList()}
@@ -224,7 +226,7 @@ export function CreateConvDialog() {
               <div className="flex gap-2">
                 <Input
                   id="group-participant"
-                  placeholder="Enter user ID"
+                  placeholder="Enter username"
                   value={participant}
                   onChange={(e) => setParticipant(e.target.value)}
                   onKeyDown={handleKeyDown}

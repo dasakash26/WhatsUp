@@ -24,7 +24,8 @@ export type WebSocketMessageType =
   | "READ_RECEIPT"
   | "ERROR"
   | "CONNECTION_ESTABLISHED"
-  | "ONLINE_STATUS";
+  | "ONLINE_STATUS"
+  | "REQUEST_ONLINE_STATUS";
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
@@ -62,13 +63,11 @@ export interface ReadReceiptPayload extends WebSocketMessage {
   timestamp: Date;
 }
 
-// Cache related types
 export type ConversationCache = {
   participants: string[];
   lastUpdated: Date;
 };
 
-// Status and notification types
 export interface ErrorPayload extends WebSocketMessage {
   message: string;
   timestamp: Date;
@@ -131,17 +130,18 @@ export interface ChatContextType {
   typingIndicators: TypingIndicator[];
   onlineUsers: Set<string>;
   isUserOnline: (userId: string) => boolean;
+  refreshOnlineStatus?: () => void;
 }
 
-export type ConversationAction =
-  | { type: "SET_CONVERSATIONS"; payload: Conversation[] }
-  | { type: "NEW_MESSAGE"; payload: { message: Message; userId?: string } }
-  | {
-      type: "UPDATE_TYPING";
-      payload: { typingIndicators: TypingIndicator[]; currentUserId: string };
-    }
-  | { type: "UPDATE_ONLINE"; payload: { onlineUsers: Set<string> } }
-  | {
-      type: "UPDATE_LAST_MESSAGE";
-      payload: { conversationId: string; message: Message };
-    };
+export interface ConversationAction {
+  type:
+    | "SET_CONVERSATIONS"
+    | "NEW_MESSAGE"
+    | "UPDATE_TYPING"
+    | "UPDATE_ONLINE"
+    | "UPDATE_LAST_MESSAGE";
+  payload: {
+    message: Message;
+    userId?: string;
+  };
+}

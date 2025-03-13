@@ -25,7 +25,8 @@ export type WebSocketMessageType =
   | "READ_RECEIPT"
   | "ERROR"
   | "CONNECTION_ESTABLISHED"
-  | "ONLINE_STATUS";
+  | "ONLINE_STATUS"
+  | "REQUEST_ONLINE_STATUS";
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;

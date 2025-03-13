@@ -35,13 +35,11 @@ export function Chat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
-  // Safe timestamp formatting function
   const formatMessageTime = (timestamp: string | undefined) => {
     if (!timestamp) return "";
 
     try {
       const date = new Date(timestamp);
-      // Check if date is valid
       if (isNaN(date.getTime())) return "";
 
       return date.toLocaleTimeString([], {
@@ -58,12 +56,10 @@ export function Chat({
     if (inputMessage.trim() && activeChat?.id) {
       sendMessage(activeChat.id, inputMessage.trim());
       setInputMessage("");
-      // Focus back on the input
       inputRef.current?.focus();
     }
   };
 
-  // Scroll to bottom for new messages only if already at bottom or it's the user's message
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
 

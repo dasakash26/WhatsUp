@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users, User } from "lucide-react";
+import { useChat } from "@/contexts/ChatContext";
 
 interface ChatListItemProps {
   chat: any;
@@ -21,16 +22,34 @@ export const ChatListItem = ({
     return chat.participants.length > 2;
   };
 
+  const { onlineUsers } = useChat();
+
+  const isUserOnline = (userId: string) => {
+    return onlineUsers.has(userId);
+  };
+
+  const getChatOnlineStatus = (chat: any) => {
+    if (!chat.isGroup && chat.participants.length === 2 && userId) {
+      const otherParticipant = chat.participants.find(
+        (id: string) => id !== userId
+      );
+      return otherParticipant ? isUserOnline(otherParticipant) : false;
+    } else if (chat.isGroup) {
+      return chat.participants.some(
+        (id: string) => id !== userId && isUserOnline(id)
+      );
+    }
+    return false;
+  };
+
   const getChatDisplayName = (chat: any) => {
     if (!chat.isGroup && chat.participants.length === 2 && userId) {
       const otherParticipant = chat.participants.find(
         (id: string) => id !== userId
       );
-      // Use the provided chat name directly if it exists
       if (chat.name && !chat.name.includes("Generated")) {
         return chat.name;
       }
-      // Fallback to basic ID-based naming
       if (otherParticipant) {
         return `User ${otherParticipant.substring(0, 4)}`;
       }
@@ -96,7 +115,7 @@ export const ChatListItem = ({
               </AvatarFallback>
             )}
           </Avatar>
-          {chat.online && (
+          {getChatOnlineStatus(chat) && (
             <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background animate-pulse" />
           )}
         </div>

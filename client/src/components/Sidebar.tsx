@@ -35,7 +35,6 @@ export function Sidebar({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Load conversations from the API via ChatContext
     const fetchConversations = async () => {
       setIsLoading(true);
       try {
@@ -57,7 +56,6 @@ export function Sidebar({
       setIsVisible(false);
     }
 
-    // Add proper event listener for window resize
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setIsVisible(true);
@@ -77,7 +75,6 @@ export function Sidebar({
       )
     : conversations;
 
-  // Handle chat selection and close sidebar on mobile
   const handleChatSelection = (chatId: string) => {
     setCurrentConversationId(chatId);
     if (isMobileOpen && onMobileClose) {
@@ -87,7 +84,6 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile overlay - only show when sidebar is open on mobile */}
       {isMobileOpen && (
         <div
           className="fixed inset-0 bg-background/70 backdrop-blur-sm z-40 md:hidden"
@@ -126,7 +122,6 @@ export function Sidebar({
         <ScrollArea className="flex-1">
           <div className="space-y-1 p-2">
             {isLoading ? (
-              // Loading state skeletons
               Array(5)
                 .fill(0)
                 .map((_, index) => (
@@ -146,7 +141,6 @@ export function Sidebar({
                 />
               ))
             ) : (
-              // Empty state
               <div className="flex flex-col items-center justify-center h-32 text-muted-foreground gap-2 p-4">
                 <Search className="h-5 w-5 opacity-50" />
                 <p className="text-center text-sm">No chats found</p>

@@ -21,4 +21,5 @@ export interface Chat {
   lastMessageSenderId?: string;
   unreadCount?: number;
   messages?: Message[];
+  participants?: string[];
 }

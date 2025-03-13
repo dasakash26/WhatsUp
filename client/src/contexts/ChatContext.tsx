@@ -5,7 +5,6 @@ import React, {
   useState,
   useRef,
   useCallback,
-  useReducer,
 } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { api } from "@/lib/api";
@@ -17,105 +16,9 @@ import {
   TypingIndicator,
   Conversation,
   ChatContextType,
-  ConversationAction,
 } from "@/types/websocket.types";
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
-
-const conversationReducer = (
-  state: Conversation[],
-  action: ConversationAction
-): Conversation[] => {
-  switch (action.type) {
-    case "SET_CONVERSATIONS":
-      return action.payload;
-
-    case "NEW_MESSAGE": {
-      const { message } = action.payload;
-      return state.map((conv) => {
-        if (conv.id !== message.conversationId) return conv;
-
-        const messageExists = conv.messages.some((m) => m.id === message.id);
-        const updatedMessages = messageExists
-          ? conv.messages.map((m) => (m.id === message.id ? message : m))
-          : [...conv.messages, message];
-
-        const isNewer =
-          !conv.lastMessageTime ||
-          new Date(message.createdAt) > new Date(conv.lastMessageTime);
-
-        return {
-          ...conv,
-          messages: updatedMessages,
-          ...(isNewer && {
-            lastMessage: message.text,
-            lastMessageTime: message.createdAt,
-            lastMessageSenderId: message.senderId,
-            lastMessageSenderName: message.senderName,
-            lastMessageSenderUsername: message.senderUsername,
-            lastMessageSenderAvatar: message.senderAvatar,
-          }),
-        };
-      });
-    }
-
-    case "UPDATE_TYPING": {
-      const { typingIndicators, currentUserId } = action.payload;
-      return state.map((conversation) => {
-        const typingUsersInConversation = typingIndicators
-          .filter(
-            (indicator) =>
-              indicator.conversationId === conversation.id &&
-              indicator.isTyping &&
-              indicator.userId !== currentUserId
-          )
-          .map((indicator) => indicator.userId);
-
-        return {
-          ...conversation,
-          typingUsers:
-            typingUsersInConversation.length > 0
-              ? typingUsersInConversation
-              : undefined,
-        };
-      });
-    }
-
-    case "UPDATE_ONLINE": {
-      const { onlineUsers } = action.payload;
-      return state.map((conversation) => {
-        const isAnyParticipantOnline = conversation.participants.some(
-          (participantId) => onlineUsers.has(participantId)
-        );
-
-        return {
-          ...conversation,
-          isOnline: isAnyParticipantOnline,
-        };
-      });
-    }
-
-    case "UPDATE_LAST_MESSAGE": {
-      const { conversationId, message } = action.payload;
-      return state.map((conv) =>
-        conv.id === conversationId
-          ? {
-              ...conv,
-              lastMessage: message.text,
-              lastMessageTime: message.createdAt,
-              lastMessageSenderId: message.senderId,
-              lastMessageSenderName: message.senderName,
-              lastMessageSenderUsername: message.senderUsername,
-              lastMessageSenderAvatar: message.senderAvatar,
-            }
-          : conv
-      );
-    }
-
-    default:
-      return state;
-  }
-};
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -124,17 +27,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
   >(null);
-  const [conversations, dispatchConversations] = useReducer(
-    conversationReducer,
-    []
-  );
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [typingIndicators, setTypingIndicators] = useState<TypingIndicator[]>(
     []
   );
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
-  const previousOnlineUsersStringRef = useRef<string>("");
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const { userId, getToken } = useAuth();
+
+  const onlineStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    console.log("Typing Indicators:", typingIndicators);
+    console.log("Online Users:", Array.from(onlineUsers));
+  }, [typingIndicators, onlineUsers]);
 
   const activeChat = currentConversationId
     ? conversations.find((c) => c.id === currentConversationId) || null
@@ -142,7 +48,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleWebSocketMessage = useCallback(
     (data: WebSocketMessage) => {
-      if (!userId) return;
+      console.log("Received WebSocket message:", data);
 
       if (data.type === "NEW_MESSAGE") {
         const messageDate = new Date(data.createdAt);
@@ -160,7 +66,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         };
 
         setMessages((prev) => {
-          // Replace temp message or add new one
           const tempIndex = prev.findIndex(
             (msg) =>
               msg.id.startsWith("temp-") &&
@@ -173,24 +78,44 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
             updated[tempIndex] = newMessage;
             return updated;
           }
-
           return [...prev, newMessage];
         });
 
-        // Update conversation with the new message
-        dispatchConversations({
-          type: "NEW_MESSAGE",
-          payload: {
-            message: newMessage,
-            userId,
-          },
-        });
+        setConversations((prevConversations) =>
+          prevConversations.map((conv) => {
+            if (conv.id !== newMessage.conversationId) return conv;
+
+            const messageExists = conv.messages.some(
+              (m) => m.id === newMessage.id
+            );
+            const updatedMessages = messageExists
+              ? conv.messages.map((m) =>
+                  m.id === newMessage.id ? newMessage : m
+                )
+              : [...conv.messages, newMessage];
+
+            const isNewer =
+              !conv.lastMessageTime ||
+              new Date(newMessage.createdAt) > new Date(conv.lastMessageTime);
+
+            return {
+              ...conv,
+              messages: updatedMessages,
+              ...(isNewer && {
+                lastMessage: newMessage.text,
+                lastMessageTime: newMessage.createdAt,
+                lastMessageSenderId: newMessage.senderId,
+                lastMessageSenderName: newMessage.senderName,
+                lastMessageSenderUsername: newMessage.senderUsername,
+                lastMessageSenderAvatar: newMessage.senderAvatar,
+              }),
+            };
+          })
+        );
       } else if (data.type === "TYPING") {
-        // Make sure we have required fields
         if (!data.userId || !data.conversationId) return;
 
         setTypingIndicators((prev) => {
-          // Remove any existing indicator for this user+conversation
           const filtered = prev.filter(
             (indicator) =>
               !(
@@ -199,32 +124,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
               )
           );
 
-          // Only add if typing is true
-          if (data.isTyping) {
-            return [
-              ...filtered,
-              {
-                userId: data.userId,
-                conversationId: data.conversationId,
-                isTyping: true,
-                lastTypingTime: new Date(),
-              },
-            ];
-          }
-
-          return filtered;
+          return data.isTyping
+            ? [
+                ...filtered,
+                {
+                  userId: data.userId,
+                  conversationId: data.conversationId,
+                  isTyping: true,
+                  lastTypingTime: new Date(),
+                },
+              ]
+            : filtered;
         });
 
-        // Clear typing indicator after 5 seconds of inactivity
         if (data.isTyping && data.userId !== userId) {
           const key = `${data.userId}-${data.conversationId}`;
 
-          // Clear any existing timeout
           if (typingTimeoutRef.current[key]) {
             clearTimeout(typingTimeoutRef.current[key]);
           }
 
-          // Set new timeout
           typingTimeoutRef.current[key] = setTimeout(() => {
             setTypingIndicators((prev) =>
               prev.filter(
@@ -238,26 +157,36 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           }, 5000);
         }
       } else if (data.type === "ONLINE_STATUS") {
-        const isAlreadyInCorrectState = data.isOnline
-          ? onlineUsers.has(data.userId)
-          : !onlineUsers.has(data.userId);
+        console.log("Received online status:", data);
+        const receivedUserId = data.userId as string;
+        const isOnline = !!data.isOnline;
 
-        if (isAlreadyInCorrectState) {
-          return;
-        }
+        console.log(
+          `Online status received: User ${receivedUserId} is ${
+            isOnline ? "online" : "offline"
+          }`
+        );
 
         setOnlineUsers((prev) => {
           const newSet = new Set(prev);
-          if (data.isOnline) {
-            newSet.add(data.userId);
+
+          if (isOnline) {
+            if (!newSet.has(receivedUserId)) {
+              console.log(`Adding ${receivedUserId} to online users`);
+              newSet.add(receivedUserId);
+            }
           } else {
-            newSet.delete(data.userId);
+            if (newSet.has(receivedUserId)) {
+              console.log(`Removing ${receivedUserId} from online users`);
+              newSet.delete(receivedUserId);
+            }
           }
+
           return newSet;
         });
       }
     },
-    [userId, onlineUsers]
+    [userId]
   );
 
   const {
@@ -271,23 +200,62 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!userId) return;
 
-    dispatchConversations({
-      type: "UPDATE_TYPING",
-      payload: { typingIndicators, currentUserId: userId },
-    });
+    setConversations((prevConversations) =>
+      prevConversations.map((conversation) => {
+        const typingUsersInConversation = typingIndicators
+          .filter(
+            (indicator) =>
+              indicator.conversationId === conversation.id &&
+              indicator.isTyping &&
+              indicator.userId !== userId
+          )
+          .map((indicator) => indicator.userId);
+
+        return {
+          ...conversation,
+          typingUsers:
+            typingUsersInConversation.length > 0
+              ? typingUsersInConversation
+              : undefined,
+        };
+      })
+    );
   }, [typingIndicators, userId]);
 
   useEffect(() => {
-    const currentOnlineUsersString = Array.from(onlineUsers).sort().join(",");
+    console.log("Online users updated:", Array.from(onlineUsers));
 
-    if (currentOnlineUsersString !== previousOnlineUsersStringRef.current) {
-      previousOnlineUsersStringRef.current = currentOnlineUsersString;
-
-      dispatchConversations({
-        type: "UPDATE_ONLINE",
-        payload: { onlineUsers },
+    setConversations((prevConversations) => {
+      const needsUpdate = prevConversations.some((conversation) => {
+        const shouldBeOnline = conversation.participants.some((participantId) =>
+          onlineUsers.has(participantId)
+        );
+        return conversation.isOnline !== shouldBeOnline;
       });
-    }
+
+      if (!needsUpdate) {
+        return prevConversations;
+      }
+
+      return prevConversations.map((conversation) => {
+        const isAnyParticipantOnline = conversation.participants.some(
+          (participantId) => onlineUsers.has(participantId)
+        );
+
+        if (conversation.isOnline === isAnyParticipantOnline) {
+          return conversation;
+        }
+
+        console.log(
+          `Updating conversation ${conversation.id} online status to ${isAnyParticipantOnline}`
+        );
+
+        return {
+          ...conversation,
+          isOnline: isAnyParticipantOnline,
+        };
+      });
+    });
   }, [onlineUsers]);
 
   useEffect(() => {
@@ -340,10 +308,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           : undefined,
       }));
 
-      dispatchConversations({
-        type: "SET_CONVERSATIONS",
-        payload: processedChats,
-      });
+      setConversations(processedChats);
     } catch (error) {
       console.error("Error loading conversations:", error);
     }
@@ -363,41 +328,75 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!userId || !isConnected) return;
+
+    wsSendMessage({
+      type: "ONLINE_STATUS",
+      userId,
+      isOnline: true,
+      timestamp: new Date().toISOString(),
+    });
+
+    onlineStatusIntervalRef.current = setInterval(() => {
+      if (isConnected) {
+        wsSendMessage({
+          type: "ONLINE_STATUS",
+          userId,
+          isOnline: true,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }, 30000);
+
+    return () => {
+      if (onlineStatusIntervalRef.current) {
+        clearInterval(onlineStatusIntervalRef.current);
+      }
+
+      if (isConnected && userId) {
+        wsSendMessage({
+          type: "ONLINE_STATUS",
+          userId,
+          isOnline: false,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    };
+  }, [userId, isConnected, wsSendMessage]);
+
+  useEffect(() => {
+    if (!isConnected && onlineStatusIntervalRef.current) {
+      clearInterval(onlineStatusIntervalRef.current);
+      onlineStatusIntervalRef.current = null;
+    } else if (isConnected && userId && !onlineStatusIntervalRef.current) {
+      onlineStatusIntervalRef.current = setInterval(() => {
+        wsSendMessage({
+          type: "ONLINE_STATUS",
+          userId,
+          isOnline: true,
+          timestamp: new Date().toISOString(),
+        });
+      }, 3000);
+    }
+  }, [isConnected, userId, wsSendMessage]);
+
   const setTyping = useCallback(
     (conversationId: string, isTyping: boolean) => {
       if (!userId) return;
 
-      // Update local state immediately for faster UI feedback
-      if (isTyping) {
-        setTypingIndicators((prev) => {
-          const filtered = prev.filter(
-            (i) => !(i.userId === userId && i.conversationId === conversationId)
-          );
-          return [
-            ...filtered,
-            {
-              userId,
-              conversationId,
-              isTyping: true,
-              lastTypingTime: new Date(),
-            },
-          ];
+      if (!isTyping) {
+        console.log("Sending 'stopped typing' indicator");
+        wsSendMessage({
+          type: "TYPING",
+          conversationId,
+          isTyping,
+          userId,
+          timestamp: new Date().toISOString(),
         });
       } else {
-        setTypingIndicators((prev) =>
-          prev.filter(
-            (i) => !(i.userId === userId && i.conversationId === conversationId)
-          )
-        );
+        console.log("User started typing (not sending to server)");
       }
-
-      wsSendMessage({
-        type: "TYPING",
-        conversationId,
-        isTyping,
-        userId,
-        timestamp: new Date().toISOString(),
-      });
     },
     [wsSendMessage, userId]
   );
@@ -421,11 +420,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const isUserOnline = useCallback(
-    (userId: string) => {
-      return onlineUsers.has(userId);
-    },
+    (userId: string) => onlineUsers.has(userId),
     [onlineUsers]
   );
+
+  const refreshOnlineStatus = useCallback(() => {
+    if (!userId || !isConnected) return;
+
+    console.log("Manually refreshing online status");
+
+    wsSendMessage({
+      type: "REQUEST_ONLINE_STATUS",
+      userId,
+      timestamp: new Date().toISOString(),
+    });
+  }, [userId, isConnected, wsSendMessage]);
 
   return (
     <ChatContext.Provider
@@ -443,6 +452,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         typingIndicators,
         onlineUsers,
         isUserOnline,
+        refreshOnlineStatus,
       }}
     >
       {children}

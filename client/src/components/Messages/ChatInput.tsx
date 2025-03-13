@@ -30,7 +30,6 @@ export function ChatInput({
   const [isTyping, setIsTyping] = useState(false);
   const { setTyping } = useChat();
 
-  // Stop typing after user stops typing for 2 seconds
   useDebounce(
     () => {
       if (conversationId && isTyping) {
@@ -64,7 +63,6 @@ export function ChatInput({
     }
   };
 
-  // Cleanup typing state when unmounting or switching conversations
   useEffect(() => {
     return () => {
       if (isTyping && conversationId) {
@@ -73,7 +71,6 @@ export function ChatInput({
     };
   }, [isTyping, conversationId, setTyping]);
 
-  // Reset typing state when conversation changes
   useEffect(() => {
     if (isTyping) {
       setIsTyping(false);

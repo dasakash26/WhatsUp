@@ -65,7 +65,8 @@ export default function createWebSocketServer(server: HTTPServer) {
   const onlineUsers = new Set<string>();
   const conversationCache = new Map<string, ConversationCache>();
 
-  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+  const CACHE_TTL = 5 * 60 * 1000;
+  const ONLINE_STATUS_CHECK_INTERVAL = 60 * 1000; // 20 seconds
 
   async function cacheConversation(conversationId: string): Promise<boolean> {
     try {
@@ -95,6 +96,7 @@ export default function createWebSocketServer(server: HTTPServer) {
   }
 
   async function cacheUserConversations(userId: string): Promise<void> {
+    console.log(`Attempting to cache conversations for user ${userId}`);
     try {
       const userConversations = await prisma.conversation.findMany({
         where: {
@@ -120,6 +122,7 @@ export default function createWebSocketServer(server: HTTPServer) {
   }
 
   function broadcastToAllClients(data: any): void {
+    console.log(`Broadcasting to all clients: ${data.type || "unknown type"}`);
     clients.forEach((ws) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(data));
@@ -131,24 +134,41 @@ export default function createWebSocketServer(server: HTTPServer) {
     conversationId: string,
     message: any
   ): Promise<void> {
+    console.log(
+      `Broadcasting ${
+        message.type || "message"
+      } to conversation ${conversationId}`
+    );
     try {
       let cachedConversation = conversationCache.get(conversationId);
 
       if (!cachedConversation || !isValidCache(cachedConversation)) {
+        console.log(
+          `Cache miss for conversation ${conversationId}, refreshing cache`
+        );
         const success = await cacheConversation(conversationId);
         if (!success) {
           console.error(`Conversation ${conversationId} not found`);
           return;
         }
         cachedConversation = conversationCache.get(conversationId);
+      } else {
+        console.log(`Cache hit for conversation ${conversationId}`);
       }
 
+      let sentCount = 0;
       cachedConversation?.participants.forEach((participantId) => {
         const client = clients.get(participantId);
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(message));
+          sentCount++;
         }
       });
+      console.log(
+        `Message sent to ${sentCount}/${
+          cachedConversation?.participants.length || 0
+        } participants in conversation ${conversationId}`
+      );
     } catch (error) {
       console.error("Error broadcasting to conversation:", error);
     }
@@ -270,7 +290,6 @@ export default function createWebSocketServer(server: HTTPServer) {
         },
       });
 
-      // Prepare online status payload
       const onlineStatusPayload: OnlineStatusPayload = {
         type: "ONLINE_STATUS",
         userId,
@@ -292,7 +311,7 @@ export default function createWebSocketServer(server: HTTPServer) {
     }
   }
 
-  // Send current online users to newly connected user
+  // Send current online users to the specified client
   async function sendOnlineUsersToClient(userId: string): Promise<void> {
     const client = clients.get(userId);
     if (!client || client.readyState !== WebSocket.OPEN) return;
@@ -321,6 +340,7 @@ export default function createWebSocketServer(server: HTTPServer) {
         });
       });
 
+      let sentStatusCount = 0;
       // For each online participant, send their status
       for (const participantId of allParticipants) {
         if (onlineUsers.has(participantId)) {
@@ -331,13 +351,18 @@ export default function createWebSocketServer(server: HTTPServer) {
             timestamp: new Date(),
           };
           client.send(JSON.stringify(onlineStatusPayload));
+          sentStatusCount++;
         }
       }
 
-      console.log(`Sent online users to client ${userId}`);
+      console.log(`Sent ${sentStatusCount} online users to client ${userId}`);
     } catch (error) {
       console.error(`Error sending online users to client ${userId}:`, error);
     }
+  }
+
+  async function handleRequestOnlineUsers(userId: string): Promise<void> {
+    await sendOnlineUsersToClient(userId);
   }
 
   wss.on("connection", async (ws, req) => {
@@ -389,6 +414,9 @@ export default function createWebSocketServer(server: HTTPServer) {
             case "READ_RECEIPT":
               await handleReadReceipt(userId, data);
               break;
+            case "REQUEST_ONLINE_STATUS":
+              await handleRequestOnlineUsers(userId);
+              break;
             default:
               console.warn(`Unknown message type: ${data.type}`);
           }
@@ -435,13 +463,29 @@ export default function createWebSocketServer(server: HTTPServer) {
     }
   });
 
-  // Periodic cleanup for conversation cache
   setInterval(() => {
     const now = new Date().getTime();
+    let removedCount = 0;
     for (const [id, cache] of conversationCache.entries()) {
       if (now - cache.lastUpdated.getTime() > CACHE_TTL) {
         conversationCache.delete(id);
+        removedCount++;
       }
     }
+    if (removedCount > 0) {
+      console.log(
+        `Cache cleanup: removed ${removedCount} stale conversation entries`
+      );
+    }
   }, CACHE_TTL);
+
+  // Periodic online status check and broadcast
+  setInterval(async () => {
+    console.log(
+      `Running scheduled online status check. Active users: ${onlineUsers.size}`
+    );
+    for (const userId of clients.keys()) {
+      await sendOnlineUsersToClient(userId);
+    }
+  }, ONLINE_STATUS_CHECK_INTERVAL);
 }

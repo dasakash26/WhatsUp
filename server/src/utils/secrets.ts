@@ -7,7 +7,6 @@ const requiredEnvVars = [
   "PORT",
   "CLERK_SECRET_KEY",
   "CLERK_PUBLISHABLE_KEY",
-  "CLIENT_URL",
   "CLERK_PEM_PUBLIC_KEY",
 ] as const;
 
