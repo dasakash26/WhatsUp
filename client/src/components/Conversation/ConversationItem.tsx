@@ -17,7 +17,6 @@ interface ConversationItemProps {
 }
 
 export function ConversationItem({
-  id,
   name,
   image,
   lastMessage,

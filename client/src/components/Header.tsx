@@ -4,7 +4,7 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/clerk-react";
-import { MessageCircle, Plus } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { ModeToggle } from "./theme/mode-toggle";
 import { cn } from "../lib/utils";
 import { Button } from "./ui/button";

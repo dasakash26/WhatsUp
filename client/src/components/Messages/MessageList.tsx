@@ -25,7 +25,6 @@ export function MessageList({
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [isAtBottomInternal, setIsAtBottomInternal] = useState(true);
 
-  // Use the provided setIsAtBottom if available, otherwise use local state
   const updateIsAtBottom = (value: boolean) => {
     setIsAtBottomInternal(value);
     if (setIsAtBottom) {
@@ -55,9 +54,6 @@ export function MessageList({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     updateIsAtBottom(true);
   };
-
-  // Determine if showing typing indicator (simulated for this example)
-  const isTyping = messages.length > 0 && messages.length % 3 === 0;
 
   return (
     <div className="flex-1 overflow-hidden relative">
