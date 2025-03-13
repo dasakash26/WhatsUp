@@ -12,7 +12,11 @@ const server = http.createServer(app);
 createWebSocketServer(server);
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://whatsup-chat.onrender.com"],
+    origin: [
+      "http://localhost:5173",
+      "https://whatsup-chat.onrender.com",
+      "http://localhost:4173",
+    ],
     credentials: true,
   })
 );
