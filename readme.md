@@ -18,7 +18,7 @@ WhatsUp is a feature-rich chat application built with modern web technologies. I
 You can try the application at: [https://whatsup-chat.onrender.com/](https://whatsup-chat.onrender.com/)
 
 <div align="center">
-  <img src="./demo/ui-demo.png" alt="WhatsUp UI Demo" width="100%" />
+  <img src="Demo/ui-demo.png" alt="WhatsUp UI Demo" width="100%" />
 </div>
 
 ## Features
