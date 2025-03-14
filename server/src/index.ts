@@ -16,6 +16,8 @@ app.use(
       "http://localhost:5173",
       "https://whatsup-chat.onrender.com",
       "http://localhost:4173",
+      "ws://whatsup-chat.onrender.com",
+      "wss://whatsup-chat.onrender.com",
     ],
     credentials: true,
   })
