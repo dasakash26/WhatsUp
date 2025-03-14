@@ -47,7 +47,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   async function fetchUser(id: string): Promise<User | null> {
     try {
-      const res = await api.get(`/user/${id}`);
+      const res = await api.get(`/user/${id}`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
       usersRef.current = [...usersRef.current, res.data];
       return res.data as User;
     } catch (error) {
