@@ -285,8 +285,9 @@ export function ChatHeader({
                       <div className="flex justify-between items-center">
                         <span className="font-medium">Email:</span>
                         <span className="text-muted-foreground">
-                          {user?.emailAddresses[0].emailAddress ||
-                            "Not available"}
+                          {(user?.emailAddresses.length > 0
+                            ? user?.emailAddresses[0].emailAddress
+                            : "Not available") || "Not available"}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
