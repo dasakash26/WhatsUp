@@ -161,12 +161,86 @@ This section highlights recent fixes and additional features to improve user exp
 - **Image Sharing in Conversations:**
 
   - Users can now share images seamlessly within individual or group chats.
+  - Supports common image formats (JPEG, PNG, GIF, WebP)
+  - Preview images before sending
+  - Automatic image optimization for faster loading
 
 - **Group Details Display:**
 
   - Added a dedicated section to view group details, including participants and group settings.
+  - Admins can manage participant permissions
+  - Edit group name, description, and avatar
+  - See when participants last accessed the group
 
 - **Dark Mode Enhancements:**
   - Improved dark mode usability with better contrast and readability adjustments.
+  - Automatic theme switching based on device preferences
+  - Persistent theme selection across sessions
+  - Refined color palette for reduced eye strain during night use
 
 ## Project Structure
+
+```
+WhatsUp/
+├── client/                 # Frontend application
+│   ├── public/             # Static assets
+│   │   └── logo.webp       # Application logo
+│   ├── src/                # Source code
+│   │   ├── components/     # Reusable UI components
+│   │   ├── contexts/       # React contexts for state management
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── lib/            # Utility functions and helpers
+│   │   ├── pages/          # Application pages/routes
+│   │   ├── services/       # API communication services
+│   │   ├── styles/         # Global styles and Tailwind configuration
+│   │   ├── types/          # TypeScript type definitions
+│   │   ├── App.tsx         # Main application component
+│   │   └── main.tsx        # Application entry point
+│   ├── .env.example        # Example environment variables
+│   ├── package.json        # Frontend dependencies
+│   ├── tailwind.config.js  # Tailwind CSS configuration
+│   └── vite.config.ts      # Vite configuration
+│
+├── server/                 # Backend application
+│   ├── prisma/             # Prisma ORM configuration and migrations
+│   │   ├── migrations/     # Database migration files
+│   │   └── schema.prisma   # Database schema
+│   ├── src/                # Source code
+│   │   ├── controllers/    # Request handlers
+│   │   ├── middlewares/    # Express middlewares
+│   │   ├── models/         # Data models
+│   │   ├── routes/         # API routes
+│   │   ├── services/       # Business logic
+│   │   ├── utils/          # Utility functions
+│   │   ├── websocket/      # WebSocket implementation
+│   │   └── index.ts        # Server entry point
+│   ├── .env.example        # Example environment variables
+│   └── package.json        # Backend dependencies
+│
+├── Demo/                   # Demo screenshots and assets
+│   └── ui-demo.png         # UI demonstration image
+│
+├── .gitignore              # Git ignore file
+├── package.json            # Root package.json for workspace commands
+└── README.md               # Project documentation
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## Contact
+
+Akash Das - [@your_twitter](https://twitter.com/your_twitter) - email@example.com
+
+Project Link: [https://github.com/dasakash26/WhatsUp](https://github.com/dasakash26/WhatsUp)
