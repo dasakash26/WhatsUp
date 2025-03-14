@@ -131,6 +131,9 @@ export interface ChatContextType {
   onlineUsers: Set<string>;
   isUserOnline: (userId: string) => boolean;
   refreshOnlineStatus?: () => void;
+  fetchUser: (id: string) => Promise<User | null>;
+  getUserFromId: (id: string) => Promise<User | null>;
+  users: User[];
 }
 
 export interface ConversationAction {

@@ -5,38 +5,38 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Base colors - light bluish palette */
-  --background: oklch(0.97 0.02 240);
-  --foreground: oklch(0.2 0.03 240);
-  --card: oklch(0.99 0.02 245);
-  --card-foreground: oklch(0.15 0.03 240);
-  --popover: oklch(0.99 0.02 245);
-  --popover-foreground: oklch(0.15 0.03 240);
+  /* Base colors - refined light palette with better contrast */
+  --background: oklch(0.98 0.01 240);
+  --foreground: oklch(0.18 0.03 245);
+  --card: oklch(1 0.01 245);
+  --card-foreground: oklch(0.14 0.03 240);
+  --popover: oklch(1 0.01 245);
+  --popover-foreground: oklch(0.14 0.03 240);
 
-  /* Primary colors - vibrant blue-purple */
-  --primary: oklch(0.5 0.24 260);
-  --primary-foreground: oklch(0.98 0.01 240);
+  /* Primary colors - sophisticated blue-violet */
+  --primary: oklch(0.52 0.26 265);
+  --primary-foreground: oklch(0.99 0.01 240);
 
-  /* Secondary colors - subtler blue */
-  --secondary: oklch(0.92 0.05 250);
-  --secondary-foreground: oklch(0.4 0.18 260);
+  /* Secondary colors - elegant muted blue */
+  --secondary: oklch(0.93 0.06 255);
+  --secondary-foreground: oklch(0.38 0.19 265);
 
-  /* Muted colors - bluish gray */
-  --muted: oklch(0.92 0.03 240);
-  --muted-foreground: oklch(0.52 0.05 240);
+  /* Muted colors - refined gray with subtle blue undertone */
+  --muted: oklch(0.94 0.02 245);
+  --muted-foreground: oklch(0.5 0.04 245);
 
-  /* Accent colors - vibrant blue */
-  --accent: oklch(0.8 0.14 220);
-  --accent-foreground: oklch(0.98 0.01 240);
+  /* Accent colors - vibrant azure */
+  --accent: oklch(0.78 0.16 225);
+  --accent-foreground: oklch(0.99 0.01 240);
 
-  /* Destructive colors - warm red with slight blue tone */
-  --destructive: oklch(0.65 0.2 20);
-  --destructive-foreground: oklch(0.98 0.01 240);
+  /* Destructive colors - refined red */
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.99 0.01 240);
 
   /* UI elements */
-  --border: oklch(0.88 0.03 240);
-  --input: oklch(0.88 0.03 240);
-  --ring: oklch(0.6 0.18 260);
+  --border: oklch(0.9 0.02 245);
+  --input: oklch(0.9 0.02 245);
+  --ring: oklch(0.62 0.2 265);
   --radius: 0.625rem;
 
   /* Sidebar specific */
@@ -84,76 +84,76 @@
 }
 
 .dark {
-  /* Base colors - dark bluish instead of gray/black */
-  --background: oklch(0.18 0.03 240);
-  --foreground: oklch(0.9 0.02 230);
-  --card: oklch(0.22 0.03 245);
-  --card-foreground: oklch(0.9 0.02 230);
-  --popover: oklch(0.22 0.03 245);
-  --popover-foreground: oklch(0.9 0.02 230);
+  /* Base colors - richer dark blue tones with more depth */
+  --background: oklch(0.15 0.04 245);
+  --foreground: oklch(0.95 0.02 235);
+  --card: oklch(0.2 0.04 250);
+  --card-foreground: oklch(0.96 0.02 235);
+  --popover: oklch(0.2 0.04 250);
+  --popover-foreground: oklch(0.96 0.02 235);
 
-  /* Primary colors - vibrant blue in dark mode */
-  --primary: oklch(0.6 0.15 250);
-  --primary-foreground: oklch(0.95 0.01 240);
+  /* Primary colors - luminous blue-violet for emphasis */
+  --primary: oklch(0.65 0.18 260);
+  --primary-foreground: oklch(0.98 0.01 240);
 
-  /* Secondary colors - blue-tinted */
-  --secondary: oklch(0.25 0.05 240);
-  --secondary-foreground: oklch(0.9 0.02 230);
+  /* Secondary colors - sophisticated darker blue */
+  --secondary: oklch(0.28 0.06 245);
+  --secondary-foreground: oklch(0.92 0.02 235);
 
-  /* Muted colors - dark blue-gray */
-  --muted: oklch(0.25 0.03 240);
-  --muted-foreground: oklch(0.65 0.03 235);
+  /* Muted colors - refined dark blue-gray with better differentiation */
+  --muted: oklch(0.3 0.03 245);
+  --muted-foreground: oklch(0.7 0.04 240);
 
-  /* Accent colors - vibrant blue */
-  --accent: oklch(0.5 0.12 220);
-  --accent-foreground: oklch(0.95 0.01 240);
+  /* Accent colors - vibrant blue with better visibility */
+  --accent: oklch(0.55 0.15 225);
+  --accent-foreground: oklch(0.98 0.01 240);
 
-  /* Destructive colors - bluish red */
-  --destructive: oklch(0.55 0.15 20);
-  --destructive-foreground: oklch(0.95 0.01 240);
+  /* Destructive colors - refined red with better visibility */
+  --destructive: oklch(0.6 0.18 25);
+  --destructive-foreground: oklch(0.98 0.01 240);
 
-  /* UI elements */
-  --border: oklch(0.28 0.03 240);
-  --input: oklch(0.28 0.03 240);
-  --ring: oklch(0.5 0.12 250);
+  /* UI elements with improved contrast */
+  --border: oklch(0.3 0.04 245);
+  --input: oklch(0.3 0.04 245);
+  --ring: oklch(0.55 0.15 260);
 
-  /* Sidebar specific - blue tinted */
-  --sidebar: oklch(0.2 0.04 245);
-  --sidebar-foreground: oklch(0.9 0.02 230);
-  --sidebar-primary: oklch(0.6 0.15 250);
-  --sidebar-primary-foreground: oklch(0.95 0.01 240);
-  --sidebar-accent: oklch(0.25 0.05 245);
-  --sidebar-accent-foreground: oklch(0.9 0.02 230);
-  --sidebar-border: oklch(0.28 0.03 240);
-  --sidebar-ring: oklch(0.45 0.12 250);
+  /* Sidebar specific - enhanced blue tinted */
+  --sidebar: oklch(0.18 0.05 250);
+  --sidebar-foreground: oklch(0.93 0.02 235);
+  --sidebar-primary: oklch(0.65 0.18 260);
+  --sidebar-primary-foreground: oklch(0.98 0.01 240);
+  --sidebar-accent: oklch(0.28 0.06 250);
+  --sidebar-accent-foreground: oklch(0.93 0.02 235);
+  --sidebar-border: oklch(0.3 0.04 245);
+  --sidebar-ring: oklch(0.5 0.14 255);
 
-  /* Chat specific colors - blue tinted */
-  --message-sent: oklch(0.5 0.15 250);
-  --message-received: oklch(0.25 0.04 240);
-  --message-sent-text: oklch(0.95 0.01 240);
-  --message-received-text: oklch(0.9 0.02 230);
-  --online-status: oklch(0.55 0.15 150);
-  --typing-indicator: oklch(0.6 0.15 250);
-  --message-hover: oklch(0.3 0.05 245);
-  --message-pressed: oklch(0.28 0.04 245);
-  --chat-background: oklch(0.16 0.03 235);
-  --attachment-bg: oklch(0.24 0.04 240);
-  --emoji-picker-bg: oklch(0.22 0.03 245);
-  --reaction-bg: oklch(0.24 0.04 240);
-  --status-online: oklch(0.55 0.15 150);
-  --status-offline: oklch(0.4 0.04 240);
-  --status-away: oklch(0.55 0.15 40);
-  --message-time: oklch(0.65 0.03 235);
-  --link-color: oklch(0.65 0.12 220);
-  --quote-border: oklch(0.5 0.12 200);
-  --mention-bg: oklch(0.3 0.05 245);
+  /* Chat specific colors - improved contrast and hierarchy */
+  --message-sent: oklch(0.55 0.18 260);
+  --message-received: oklch(0.28 0.05 245);
+  --message-sent-text: oklch(0.98 0.01 240);
+  --message-received-text: oklch(0.93 0.02 235);
+  --online-status: oklch(0.6 0.18 155);
+  --typing-indicator: oklch(0.65 0.18 260);
+  --message-hover: oklch(0.32 0.05 250);
+  --message-pressed: oklch(0.3 0.05 250);
+  --chat-background: oklch(0.14 0.04 240);
+  --attachment-bg: oklch(0.26 0.05 245);
+  --emoji-picker-bg: oklch(0.22 0.04 250);
+  --reaction-bg: oklch(0.26 0.05 245);
+  --status-online: oklch(0.6 0.18 155);
+  --status-offline: oklch(0.45 0.04 245);
+  --status-away: oklch(0.6 0.18 45);
+  --message-time: oklch(0.68 0.04 240);
+  --link-color: oklch(0.7 0.15 225);
+  --quote-border: oklch(0.55 0.14 205);
+  --mention-bg: oklch(0.32 0.06 250);
 
-  /* Chart colors - blue tinted */
-  --chart-1: oklch(0.6 0.15 250);
-  --chart-2: oklch(0.5 0.12 220);
-  --chart-3: oklch(0.55 0.15 190);
-  --chart-4: oklch(0.6 0.15 280);
-  --chart-5: oklch(0.58 0.15 300);
+  /* Chart colors - more vibrant for better visibility */
+  --chart-1: oklch(0.65 0.18 260);
+  --chart-2: oklch(0.55 0.15 225);
+  --chart-3: oklch(0.6 0.18 195);
+  --chart-4: oklch(0.65 0.18 285);
+  --chart-5: oklch(0.62 0.18 305);
 }
 
 @theme inline {

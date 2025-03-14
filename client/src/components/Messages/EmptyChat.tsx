@@ -32,7 +32,7 @@ export function EmptyChat({
           <Button
             variant="outline"
             onClick={onMobileMenuClick}
-            className="md:hidden mt-2 flex items-center gap-2"
+            className="md:hidden m-2 flex justify-center ml-16 items-center gap-2"
           >
             <Menu className="h-4 w-4" />
             <span>Open Chats</span>

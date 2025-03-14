@@ -31,6 +31,9 @@ function App() {
       <div className="flex h-screen overflow-hidden">
         <Header />
         <main className="flex flex-1 overflow-hidden relative">
+          {/* Background Grid */}
+          <div className="absolute inset-0 bg-grid-small [mask-image:radial-gradient(white,transparent)] opacity-30 pointer-events-none"></div>
+
           {/* Mobile menu button with clear tap target */}
           {!isSidebarOpen && (
             <Button

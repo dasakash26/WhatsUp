@@ -16,6 +16,7 @@ import {
   TypingIndicator,
   Conversation,
   ChatContextType,
+  User,
 } from "@/types/websocket.types";
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -23,6 +24,7 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const usersRef = useRef<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<
     string | null
@@ -33,6 +35,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const typingThrottleRef = useRef<Record<string, number>>({});
   const { userId, getToken } = useAuth();
 
   const onlineStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,6 +44,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("Typing Indicators:", typingIndicators);
     console.log("Online Users:", Array.from(onlineUsers));
   }, [typingIndicators, onlineUsers]);
+
+  async function fetchUser(id: string): Promise<User | null> {
+    try {
+      const res = await api.get(`/user/${id}`);
+      usersRef.current = [...usersRef.current, res.data];
+      return res.data as User;
+    } catch (error) {
+      console.error("Error getting user from id:", error);
+      return null;
+    }
+  }
+
+  async function getUserFromId(id: string): Promise<User | null> {
+    try {
+      const gotUser = usersRef.current.find((u) => u.id === id);
+      if (gotUser) return gotUser;
+
+      const fetchedUser = await fetchUser(id);
+      return fetchedUser;
+    } catch (error) {
+      console.error("Error getting user from id:", error);
+      return null;
+    }
+  }
 
   const activeChat = currentConversationId
     ? conversations.find((c) => c.id === currentConversationId) || null
@@ -223,8 +250,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [typingIndicators, userId]);
 
   useEffect(() => {
-    console.log("Online users updated:", Array.from(onlineUsers));
-
     setConversations((prevConversations) => {
       const needsUpdate = prevConversations.some((conversation) => {
         const shouldBeOnline = conversation.participants.some((participantId) =>
@@ -385,18 +410,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     (conversationId: string, isTyping: boolean) => {
       if (!userId) return;
 
-      if (!isTyping) {
-        console.log("Sending 'stopped typing' indicator");
-        wsSendMessage({
-          type: "TYPING",
-          conversationId,
-          isTyping,
-          userId,
-          timestamp: new Date().toISOString(),
-        });
+      const typingKey = `${userId}-${conversationId}`;
+      const now = Date.now();
+
+      if (isTyping) {
+        const lastTypingTime = typingThrottleRef.current[typingKey] || 0;
+        if (now - lastTypingTime < 3000) {
+          return;
+        }
+        typingThrottleRef.current[typingKey] = now;
       } else {
-        console.log("User started typing (not sending to server)");
+        typingThrottleRef.current[typingKey] = 0;
       }
+
+      wsSendMessage({
+        type: "TYPING",
+        conversationId,
+        isTyping,
+        userId,
+        timestamp: new Date().toISOString(),
+      });
     },
     [wsSendMessage, userId]
   );
@@ -427,8 +460,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshOnlineStatus = useCallback(() => {
     if (!userId || !isConnected) return;
 
-    console.log("Manually refreshing online status");
-
     wsSendMessage({
       type: "REQUEST_ONLINE_STATUS",
       userId,
@@ -453,6 +484,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         onlineUsers,
         isUserOnline,
         refreshOnlineStatus,
+        fetchUser,
+        users: usersRef.current,
+        getUserFromId,
       }}
     >
       {children}

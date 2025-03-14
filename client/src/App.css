@@ -1,0 +1,68 @@
+.bg-grid-small {
+  --grid-color-light: rgba(0, 0, 0, 0.1); /* Increased opacity */
+  --grid-color-dark: rgba(255, 255, 255, 0.12); /* Increased opacity */
+  --grid-size: 40px;
+  --grid-blur: 0px;
+
+  background-image: linear-gradient(
+      to right,
+      var(--grid-color, var(--grid-color-light)) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      var(--grid-color, var(--grid-color-light)) 1px,
+      transparent 1px
+    );
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: 0px 0px;
+}
+
+/* Dark mode support */
+:root.dark .bg-grid-small {
+  --grid-color: var(--grid-color-dark);
+}
+
+/* Light mode explicit setting */
+:root:not(.dark) .bg-grid-small {
+  --grid-color: var(--grid-color-light);
+}
+
+/* Modern grid effect with visible glow */
+.bg-grid-glow {
+  position: relative;
+}
+
+.bg-grid-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    var(--background-end, rgba(120, 119, 198, 0.2)) 0%,
+    /* Increased opacity */ var(--background-start, rgba(0, 0, 0, 0)) 80%
+  );
+  opacity: 1; /* Full opacity for base effect */
+  z-index: -1;
+  animation: pulse 10s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+  } /* Increased minimum opacity */
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Dark/light mode gradient variables with improved visibility */
+:root.dark .bg-grid-glow::before {
+  --background-end: rgba(88, 95, 173, 0.25); /* More visible */
+  --background-start: rgba(30, 30, 60, 0.05); /* Slight base color */
+}
+
+:root:not(.dark) .bg-grid-glow::before {
+  --background-end: rgba(100, 100, 255, 0.15); /* More visible */
+  --background-start: rgba(200, 200, 255, 0.05); /* Slight base color */
+}

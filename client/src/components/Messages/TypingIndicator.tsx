@@ -6,7 +6,7 @@ interface TypingIndicatorProps {
 }
 
 export function TypingIndicator({ conversationId }: TypingIndicatorProps) {
-  const { typingIndicators } = useChat();
+  const { typingIndicators, conversations } = useChat();
   const { userId } = useAuth();
 
   const typingUsers = typingIndicators.filter(
@@ -20,11 +20,18 @@ export function TypingIndicator({ conversationId }: TypingIndicatorProps) {
     return null;
   }
 
-  // Get display text
-  const typingText =
-    typingUsers.length > 1
-      ? "Several people are typing..."
-      : "Someone is typing...";
+  const conversation = conversations?.find(
+    (conv) => conv.id === conversationId
+  );
+  const isDM = !(conversation?.participants.length === 2);
+
+  let typingText = "Several people are typing...";
+
+  if (typingUsers.length === 1 && isDM) {
+    typingText = `${typingUsers[0].userId || "Someone"} is typing...`;
+  } else if (typingUsers.length === 1) {
+    typingText = "Someone is typing...";
+  }
 
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground p-2 pl-4 border-t border-border">

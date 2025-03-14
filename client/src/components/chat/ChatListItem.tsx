@@ -1,9 +1,10 @@
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Users } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
+import { useEffect, useState } from "react";
 
 interface ChatListItemProps {
   chat: any;
@@ -18,6 +19,29 @@ export const ChatListItem = ({
   userId,
   onClick,
 }: ChatListItemProps) => {
+  const [user, setUser] = useState<any>(null);
+  const { users, fetchUser, typingIndicators } = useChat();
+
+  useEffect(() => {
+    if (!chat.isGroup) {
+      const otherParticipant = chat.participants.find(
+        (id: string) => id !== userId
+      );
+      if (otherParticipant) {
+        const otherUser = users.find((u) => u.id === otherParticipant);
+        if (otherUser) {
+          setUser(otherUser);
+        } else {
+          async function fetchUserData() {
+            const res = await fetchUser(otherParticipant);
+            if (res) setUser(res);
+          }
+          fetchUserData();
+        }
+      }
+    }
+  }, [chat]);
+
   const isGroupChat = (chat: any) => {
     return chat.participants.length > 2;
   };
@@ -93,6 +117,39 @@ export const ChatListItem = ({
     }
   };
 
+  const isTypingInChat = (chatId: string) => {
+    return typingIndicators.some(
+      (indicator) =>
+        indicator.conversationId === chatId &&
+        indicator.userId !== userId &&
+        indicator.isTyping
+    );
+  };
+
+  const getTypingUserName = (chatId: string) => {
+    if (!chat.isGroup) {
+      return "typing...";
+    }
+
+    const typingUser = typingIndicators.find(
+      (indicator) =>
+        indicator.conversationId === chatId &&
+        indicator.userId !== userId &&
+        indicator.isTyping
+    );
+
+    if (!typingUser) return null;
+
+    const typingUserData = users.find((u) => u.id === typingUser.userId);
+    if (typingUserData) {
+      return `${
+        typingUserData.fullName?.split(" ")[0] || "Someone"
+      } is typing...`;
+    }
+
+    return "Someone is typing...";
+  };
+
   return (
     <Card
       className={cn(
@@ -106,13 +163,23 @@ export const ChatListItem = ({
         <div className="relative flex-shrink-0">
           <Avatar className="h-12 w-12 border border-border shadow-sm">
             {isGroupChat(chat) ? (
-              <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
-                <Users className="h-6 w-6" />
-              </AvatarFallback>
+              <>
+                <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary text-primary-foreground">
+                  <Users className="h-6 w-6" />
+                </AvatarFallback>
+              </>
             ) : (
-              <AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/70 text-secondary-foreground">
-                <User className="h-5 w-5" />
-              </AvatarFallback>
+              <>
+                {user?.imageUrl && (
+                  <AvatarImage
+                    src={user.imageUrl}
+                    alt={user?.fullName || "User"}
+                  />
+                )}
+                <AvatarFallback className="bg-gradient-to-br from-secondary to-secondary/70 text-secondary-foreground">
+                  {user?.fullName?.[0] || "U"}
+                </AvatarFallback>
+              </>
             )}
           </Avatar>
           {getChatOnlineStatus(chat) && (
@@ -138,7 +205,11 @@ export const ChatListItem = ({
           </div>
 
           <div className="text-xs text-muted-foreground truncate mt-1">
-            {chat.lastMessage ? (
+            {isTypingInChat(chat.id) ? (
+              <span className="text-primary font-medium animate-pulse">
+                {getTypingUserName(chat.id)}
+              </span>
+            ) : chat.lastMessage ? (
               <>
                 <span
                   className={
@@ -149,7 +220,9 @@ export const ChatListItem = ({
                 >
                   {getLastMessagePrefix(chat)}
                 </span>
-                {chat.lastMessage}
+                {chat.lastMessage.length > 10
+                  ? `${chat.lastMessage.slice(0, 10)}...`
+                  : chat.lastMessage}
               </>
             ) : (
               "No messages yet"
