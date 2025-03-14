@@ -238,9 +238,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-## Contact
-
-Akash Das - [@your_twitter](https://twitter.com/your_twitter) - email@example.com
-
-Project Link: [https://github.com/dasakash26/WhatsUp](https://github.com/dasakash26/WhatsUp)
