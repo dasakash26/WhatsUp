@@ -80,7 +80,7 @@ export function MessageBubble({
         }
         if (/\p{Extended_Pictographic}/u.test(part)) {
           return (
-            <span key={i} style={{ fontSize: "1.5em" }}>
+            <span key={i} style={{ fontSize: "5em" }}>
               {part}
             </span>
           );
