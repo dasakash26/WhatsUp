@@ -8,8 +8,12 @@ import {
   ZoomIn,
   ZoomOut,
   X,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
 interface MessageBubbleProps {
   isFromCurrentUser: boolean;
@@ -24,6 +28,7 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const imageRef = useRef<HTMLDivElement>(null);
@@ -45,6 +50,63 @@ export function MessageBubble({
 
   const closePreview = () => {
     setIsPreviewOpen(false);
+  };
+
+  // Function to render text with clickable URLs
+  const renderTextWithUrls = useCallback(
+    (text: string) => {
+      if (!text) return null;
+
+      const parts = text.split(URL_REGEX);
+      const matches = (text.match(URL_REGEX) || []) as string[];
+
+      return parts.map((part, i) => {
+        // If this part is a URL, render it as a link
+        if (matches.includes(part)) {
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "inline-flex items-center gap-1 underline underline-offset-2",
+                isFromCurrentUser
+                  ? "text-primary-foreground/90 hover:text-primary-foreground"
+                  : "text-blue-600 hover:text-blue-700"
+              )}
+            >
+              {part}
+              <ExternalLink size={12} className="inline" />
+            </a>
+          );
+        }
+        // Otherwise render as plain text
+        return <span key={i}>{part}</span>;
+      });
+    },
+    [isFromCurrentUser]
+  );
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
+
+  // Function to get a clean, displayable version of the URL
+  const getDisplayUrl = (url: string) => {
+    if (!url) return "";
+    try {
+      const urlObj = new URL(url);
+      // Return domain name + first part of path (truncated if too long)
+      const pathDisplay =
+        urlObj.pathname.length > 15
+          ? urlObj.pathname.substring(0, 15) + "..."
+          : urlObj.pathname;
+      return `${urlObj.hostname}${pathDisplay}`;
+    } catch (e) {
+      // If URL parsing fails, just return a truncated version
+      return url.length > 30 ? url.substring(0, 30) + "..." : url;
+    }
   };
 
   if (message.senderId === "system") {
@@ -111,20 +173,51 @@ export function MessageBubble({
             </p>
           )}
           {message.image && !imageError ? (
-            <div className="mb-2">
+            <div className="mb-2 relative">
+              {imageLoading && (
+                <div className="flex flex-col items-center justify-center h-32 w-full bg-muted/30 rounded-lg p-2">
+                  <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+                  <span className="mt-2 text-xs text-muted-foreground text-center">
+                    Loading image...
+                  </span>
+                </div>
+              )}
               <img
                 src={message.image}
                 alt="Message attachment"
-                className="rounded-lg max-h-[300px] w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                className={cn(
+                  "rounded-lg max-h-[300px] w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity",
+                  imageLoading ? "hidden" : "block"
+                )}
                 onError={() => setImageError(true)}
+                onLoad={handleImageLoad}
                 onClick={handleImageClick}
               />
             </div>
           ) : null}
           {(message.text || imageError) && (
             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-              {imageError && message.image ? "Unable to load image: " : ""}
-              {message.text}
+              {imageError && message.image ? (
+                <>
+                  <span>Unable to load image: </span>
+                  <a
+                    href={message.image}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "inline-flex items-center gap-1 underline underline-offset-2",
+                      isFromCurrentUser
+                        ? "text-primary-foreground/90"
+                        : "text-blue-600"
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {getDisplayUrl(message.image)}
+                    <ExternalLink size={10} className="inline flex-shrink-0" />
+                  </a>
+                </>
+              ) : null}
+              {renderTextWithUrls(message.text || "")}
             </p>
           )}
           {isFromCurrentUser && (
@@ -216,6 +309,14 @@ export function MessageBubble({
               className="overflow-auto max-w-full max-h-[90vh] flex items-center justify-center"
               style={{ width: "100%", height: "100%" }}
             >
+              {imageLoading && (
+                <div className="flex flex-col items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  <span className="mt-2 text-sm text-white">
+                    Loading image...
+                  </span>
+                </div>
+              )}
               <img
                 src={message.image}
                 alt="Image preview"
@@ -225,8 +326,23 @@ export function MessageBubble({
                   maxWidth: "100%",
                   maxHeight: "100%",
                   objectFit: "contain",
+                  display: imageLoading ? "none" : "block",
                 }}
+                onLoad={handleImageLoad}
               />
+              {/* Always show image URL in preview */}
+              {message.image && (
+                <div className="mt-2 text-sm text-blue-300 hover:text-blue-200 underline underline-offset-2 inline-flex items-center gap-1">
+                  <a
+                    href={message.image}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink size={12} className="inline" />
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

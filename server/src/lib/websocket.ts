@@ -180,7 +180,7 @@ export default function createWebSocketServer(server: HTTPServer) {
     userData: UserJwtPayload,
     data: MessagePayload
   ): Promise<void> {
-    const { conversationId, text, imageUrl } = data;
+    const { conversationId, text, image } = data;
 
     try {
       const username = userData.username || userData.preferred_username;
@@ -190,7 +190,7 @@ export default function createWebSocketServer(server: HTTPServer) {
       const newMessage = await prisma.message.create({
         data: {
           text,
-          image: imageUrl || null,
+          image: image || null,
           senderId: userId,
           senderName: name,
           senderUsername: username,
@@ -204,7 +204,7 @@ export default function createWebSocketServer(server: HTTPServer) {
         type: "NEW_MESSAGE",
         id: newMessage.id,
         text: newMessage.text,
-        image: newMessage.image,
+        imageUrl: newMessage.image,
         status: newMessage.status,
         senderId: userId,
         senderName: newMessage.senderName || "",

@@ -29,6 +29,7 @@ export function Chat({
     connectionError,
     onlineUsers,
   } = useChat();
+
   const { userId } = useAuth();
   const [inputMessage, setInputMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);

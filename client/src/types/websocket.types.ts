@@ -25,7 +25,8 @@ export type WebSocketMessageType =
   | "ERROR"
   | "CONNECTION_ESTABLISHED"
   | "ONLINE_STATUS"
-  | "REQUEST_ONLINE_STATUS";
+  | "REQUEST_ONLINE_STATUS"
+  | "SYSTEM_MESSAGE";
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
@@ -40,13 +41,15 @@ export interface MessagePayload extends WebSocketMessage {
 export interface CompleteMessage extends WebSocketMessage {
   id: string;
   text: string;
-  status: string;
+  status: "sent" | "delivered" | "read" | "failed" | "system";
   senderId: string;
   senderName: string;
   senderUsername: string;
   senderAvatar: string | null;
   conversationId: string;
   createdAt: Date;
+  tempMessageId?: string;
+  image?: string;
 }
 
 export interface TypingPayload extends WebSocketMessage {
@@ -136,6 +139,7 @@ export interface ChatContextType {
   users: User[];
   reloadChats: () => Promise<void>;
   isLoading: boolean;
+  isImageUploading: boolean;
 }
 
 export interface ConversationAction {

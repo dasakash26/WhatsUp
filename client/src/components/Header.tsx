@@ -75,7 +75,7 @@ export function Header() {
               className="rounded-full bg-primary/10 p-2 text-primary hover:bg-primary/20 hover:scale-105 transition-all shadow-sm border-primary/20"
             >
               <span className="sr-only">Sign In</span>
-              <span className="font-medium text-xs">In</span>
+              <span className="font-medium text-xs">Sign In</span>
             </Button>
           </SignInButton>
         </SignedOut>

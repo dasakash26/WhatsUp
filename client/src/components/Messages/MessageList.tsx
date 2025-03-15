@@ -24,7 +24,6 @@ export function MessageList({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [isAtBottomInternal, setIsAtBottomInternal] = useState(true);
-
   const updateIsAtBottom = (value: boolean) => {
     setIsAtBottomInternal(value);
     if (setIsAtBottom) {

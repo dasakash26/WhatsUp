@@ -2,15 +2,19 @@ import "./App.css";
 import { Header } from "./components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { Chat } from "@/components/Chat";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChatProvider } from "./contexts/ChatContext";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
+import { SystemMessage } from "@/components/SystemMessage";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  useEffect(() => {
+    toast.success("Whats Up?? ");
+  }, []);
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => {
       const newState = !prev;
@@ -32,10 +36,8 @@ function App() {
       <div className="flex h-screen overflow-hidden">
         <Header />
         <main className="flex flex-1 overflow-hidden relative">
-          {/* Background Grid */}
           <div className="absolute inset-0 bg-grid-small [mask-image:radial-gradient(white,transparent)] opacity-30 pointer-events-none"></div>
 
-          {/* Mobile menu button with clear tap target */}
           {!isSidebarOpen && (
             <Button
               variant="ghost"
@@ -59,6 +61,10 @@ function App() {
             onMobileMenuClick={toggleSidebar}
           />
         </main>
+        <SystemMessage
+          type="loading"
+          className="absolute bottom-0 left-1/2 transform -translate-x-1/2"
+        />
       </div>
       <Toaster />
     </ChatProvider>

@@ -16,7 +16,14 @@ const storage = new CloudinaryStorage({
       const filename = `${Date.now()}-${file.originalname}`;
       return `WhatsUp/${filename}`;
     },
-  },
+    // Bypassing type checking with a type assertion
+    transformation: [
+      {
+        quality: "auto:low",
+        fetch_format: "auto",
+      },
+    ] as any,
+  } as any,
 });
 
 export const upload = multer({

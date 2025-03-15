@@ -38,6 +38,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const typingThrottleRef = useRef<Record<string, number>>({});
   const { userId, getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
 
   const onlineStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -83,6 +84,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Received WebSocket message:", data);
 
       if (data.type === "NEW_MESSAGE") {
+        const imageUrl =
+          typeof data.imageUrl === "string" && data.imageUrl.trim() !== ""
+            ? data.imageUrl
+            : undefined;
+
         const messageDate = new Date(data.createdAt);
         const newMessage: Message = {
           id: data.id as string,
@@ -95,21 +101,43 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           conversationId: data.conversationId as string,
           createdAt: messageDate,
           type: "NEW_MESSAGE",
+          image: imageUrl,
+          tempMessageId: data.tempMessageId as string,
         };
+
+        console.log("Processing received message:", newMessage);
 
         setMessages((prev) => {
           const tempIndex = prev.findIndex(
-            (msg) =>
-              msg.id.startsWith("temp-") &&
-              msg.conversationId === newMessage.conversationId &&
-              msg.text === newMessage.text
+            (msg) => msg.id === data.tempMessageId
           );
 
-          if (tempIndex !== -1) {
+          const fallbackTempIndex =
+            tempIndex === -1
+              ? prev.findIndex(
+                  (msg) =>
+                    msg.id.startsWith("temp-") &&
+                    msg.conversationId === newMessage.conversationId &&
+                    msg.text === newMessage.text &&
+                    msg.senderId === userId
+                )
+              : -1;
+
+          if (tempIndex !== -1 || fallbackTempIndex !== -1) {
             const updated = [...prev];
-            updated[tempIndex] = newMessage;
+            const indexToReplace =
+              tempIndex !== -1 ? tempIndex : fallbackTempIndex;
+            updated[indexToReplace] = newMessage;
             return updated;
           }
+
+          const existingIndex = prev.findIndex(
+            (msg) => msg.id === newMessage.id
+          );
+          if (existingIndex !== -1) {
+            return prev;
+          }
+
           return [...prev, newMessage];
         });
 
@@ -117,14 +145,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           prevConversations.map((conv) => {
             if (conv.id !== newMessage.conversationId) return conv;
 
-            const messageExists = conv.messages.some(
-              (m) => m.id === newMessage.id
+            const tempIndex = conv.messages.findIndex(
+              (msg) => msg.id === data.tempMessageId
             );
-            const updatedMessages = messageExists
-              ? conv.messages.map((m) =>
-                  m.id === newMessage.id ? newMessage : m
-                )
-              : [...conv.messages, newMessage];
+
+            const fallbackTempIndex =
+              tempIndex === -1
+                ? conv.messages.findIndex(
+                    (msg) =>
+                      msg.id.startsWith("temp-") &&
+                      msg.text === newMessage.text &&
+                      msg.senderId === userId
+                  )
+                : -1;
+
+            let updatedMessages;
+
+            if (tempIndex !== -1 || fallbackTempIndex !== -1) {
+              updatedMessages = [...conv.messages];
+              const indexToReplace =
+                tempIndex !== -1 ? tempIndex : fallbackTempIndex;
+              updatedMessages[indexToReplace] = newMessage;
+            } else {
+              const existingIndex = conv.messages.findIndex(
+                (msg) => msg.id === newMessage.id
+              );
+              if (existingIndex !== -1) {
+                return conv;
+              } else {
+                updatedMessages = [...conv.messages, newMessage];
+              }
+            }
 
             const isNewer =
               !conv.lastMessageTime ||
@@ -134,7 +185,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
               ...conv,
               messages: updatedMessages,
               ...(isNewer && {
-                lastMessage: newMessage.text,
+                lastMessage: newMessage.image
+                  ? newMessage.text || "Image"
+                  : newMessage.text,
                 lastMessageTime: newMessage.createdAt,
                 lastMessageSenderId: newMessage.senderId,
                 lastMessageSenderName: newMessage.senderName,
@@ -301,6 +354,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [currentConversationId, conversations]);
 
+  useEffect(() => {
+    const savedConversationId = localStorage.getItem("lastConversationId");
+    if (savedConversationId) {
+      setCurrentConversationId(savedConversationId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentConversationId) {
+      localStorage.setItem("lastConversationId", currentConversationId);
+    }
+  }, [currentConversationId]);
+
   const loadConversations = useCallback(async () => {
     if (!userId) return;
 
@@ -343,7 +409,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error loading conversations:", error);
     } finally {
-      setIsLoading(false);
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 300);
     }
   }, [getToken, userId]);
 
@@ -446,33 +514,50 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     async (conversationId: string, text: string, image?: File) => {
       if (!userId || (!text && !image)) return;
 
-      let imageUrl;
+      let imageUrl: string | undefined;
       if (image) {
+        console.log("Starting image upload...");
+        setIsImageUploading(true);
         try {
+          const token = await getToken();
           const formData = new FormData();
           formData.append("image", image);
-          const token = await getToken();
           const res = await api.post("/message/image", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${token}`,
             },
           });
-          imageUrl = res.data;
+          if (
+            res.data &&
+            typeof res.data === "string" &&
+            res.data.trim() !== ""
+          ) {
+            imageUrl = res.data;
+            console.log("Image uploaded successfully:", imageUrl);
+          } else {
+            console.error("Invalid image URL from server:", res.data);
+            throw new Error("Invalid image URL from server");
+          }
         } catch (error) {
-          console.error("Error uploading image:", error);
+          console.error("Error handling image:", error);
+          return;
+        } finally {
+          setTimeout(() => {
+            console.log("Image upload complete, clearing loading state");
+            setIsImageUploading(false);
+          }, 300);
         }
       }
 
       setTyping(conversationId, false);
-
       const message: MessagePayload = {
         type: "MESSAGE",
         conversationId,
-        text,
-        ...(imageUrl && { imageUrl }),
+        text: text || "Image",
+        ...(imageUrl && { image: imageUrl }),
       };
-
+      console.log("Sending WebSocket message:", message);
       wsSendMessage(message);
     },
     [setTyping, userId, wsSendMessage, getToken]
@@ -499,7 +584,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       await loadConversations();
     } catch (error) {
       console.error("Error reloading conversations:", error);
-    } finally {
       setIsLoading(false);
     }
   }, [loadConversations]);
@@ -525,7 +609,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         users: usersRef.current,
         getUserFromId,
         reloadChats,
-        isLoading,
+        isLoading: isLoading || isImageUploading,
+        isImageUploading,
       }}
     >
       {children}
