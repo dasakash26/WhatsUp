@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
-
 interface MessageBubbleProps {
   isFromCurrentUser: boolean;
   message: Message;
@@ -52,17 +50,16 @@ export function MessageBubble({
     setIsPreviewOpen(false);
   };
 
-  // Function to render text with clickable URLs
+  // Updated function to render text with clickable URLs and larger emojis
   const renderTextWithUrls = useCallback(
     (text: string) => {
       if (!text) return null;
-
-      const parts = text.split(URL_REGEX);
-      const matches = (text.match(URL_REGEX) || []) as string[];
-
+      // regex to match URLs or emoji characters (using Unicode property escapes)
+      const parts = text.split(
+        /((https?:\/\/[^\s]+)|(\p{Extended_Pictographic}))/gu
+      );
       return parts.map((part, i) => {
-        // If this part is a URL, render it as a link
-        if (matches.includes(part)) {
+        if (/https?:\/\/[^\s]+/.test(part)) {
           return (
             <a
               key={i}
@@ -81,7 +78,13 @@ export function MessageBubble({
             </a>
           );
         }
-        // Otherwise render as plain text
+        if (/\p{Extended_Pictographic}/u.test(part)) {
+          return (
+            <span key={i} style={{ fontSize: "1.5em" }}>
+              {part}
+            </span>
+          );
+        }
         return <span key={i}>{part}</span>;
       });
     },
