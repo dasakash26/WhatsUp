@@ -134,6 +134,8 @@ export interface ChatContextType {
   fetchUser: (id: string) => Promise<User | null>;
   getUserFromId: (id: string) => Promise<User | null>;
   users: User[];
+  reloadChats: () => Promise<void>;
+  isLoading: boolean;
 }
 
 export interface ConversationAction {

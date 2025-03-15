@@ -123,3 +123,39 @@ export const deleteMessage = expressAsyncHandler(
     return;
   }
 );
+
+//Delete all messages in a conversation
+export const deleteConversationMessages = expressAsyncHandler(
+  async (req: Request, res: Response) => {
+    const { conversationId } = req.params;
+
+    //@ts-ignore
+    const userId = req.auth.userId;
+    const user = await clerkClient.users.getUser(userId);
+    if (!conversationId) {
+      res.status(400).json({ error: "Conversation ID is required" });
+      return;
+    }
+
+    const messages = await prisma.message.deleteMany({
+      where: {
+        conversationId: conversationId as string,
+      },
+    });
+
+    //system generated delete info message
+    const message = await prisma.message.create({
+      data: {
+        text: `All messages in this conversation have been deleted by ${user.firstName} ${user.lastName} (@${user.username})`,
+        senderId: "system",
+        senderName: "System",
+        senderUsername: "System",
+        senderAvatar:
+          "https://png.pngtree.com/png-vector/20201224/ourmid/pngtree-future-intelligent-technology-robot-ai-png-image_2588803.jpg",
+        conversationId: conversationId as string,
+      },
+    });
+
+    res.status(200).json(message);
+  }
+);

@@ -37,6 +37,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const typingThrottleRef = useRef<Record<string, number>>({});
   const { userId, getToken } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const onlineStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -304,6 +305,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!userId) return;
 
     try {
+      setIsLoading(true);
       const token = await getToken();
       if (!token) {
         console.error("No authentication token available");
@@ -340,6 +342,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       setConversations(processedChats);
     } catch (error) {
       console.error("Error loading conversations:", error);
+    } finally {
+      setIsLoading(false);
     }
   }, [getToken, userId]);
 
@@ -471,6 +475,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [userId, isConnected, wsSendMessage]);
 
+  const reloadChats = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      await loadConversations();
+    } catch (error) {
+      console.error("Error reloading conversations:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [loadConversations]);
+
   return (
     <ChatContext.Provider
       value={{
@@ -491,6 +506,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         fetchUser,
         users: usersRef.current,
         getUserFromId,
+        reloadChats,
+        isLoading,
       }}
     >
       {children}

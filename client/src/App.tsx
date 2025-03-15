@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ChatProvider } from "./contexts/ChatContext";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "sonner";
 
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -59,6 +60,7 @@ function App() {
           />
         </main>
       </div>
+      <Toaster />
     </ChatProvider>
   );
 }

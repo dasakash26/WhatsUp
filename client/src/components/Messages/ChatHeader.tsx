@@ -33,7 +33,18 @@ import { useChat } from "@/contexts/ChatContext";
 import { useAuth } from "@clerk/clerk-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-
+import { api } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 interface ChatHeaderProps {
   chat: Chat;
   onMobileMenuClick?: () => void;
@@ -48,9 +59,11 @@ export function ChatHeader({
   const [showDetails, setShowDetails] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [groupParticipants, setGroupParticipants] = useState<any[]>([]);
-  const { users, fetchUser, getUserFromId } = useChat();
-  const { userId } = useAuth();
+  const { users, fetchUser, getUserFromId, reloadChats } = useChat();
+  const { userId, getToken } = useAuth();
   const [activeTab, setActiveTab] = useState("about");
+  const [loading, setLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!chat.isGroup) {
@@ -76,6 +89,30 @@ export function ChatHeader({
       fetchGroupParticipants();
     }
   }, [chat, userId, users, fetchUser, showDetails]);
+
+  const clearChatHistory = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteMessages = async () => {
+    setLoading(true);
+    try {
+      await api.delete(`/message/${chat.id}/all`, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      });
+
+      setShowDeleteConfirm(false);
+      setShowDetails(false);
+      toast.success("Chat history cleared successfully");
+      reloadChats();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-3 border-b border-border flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10">
@@ -162,6 +199,29 @@ export function ChatHeader({
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      {/* Alert Dialog for Delete Confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Chat History</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all messages in this conversation?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMessages}
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {loading ? "Deleting..." : "Delete All Messages"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Chat Details Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
@@ -356,9 +416,11 @@ export function ChatHeader({
                         variant="outline"
                         className="w-full justify-start text-destructive hover:bg-destructive/10"
                         size="sm"
+                        onClick={clearChatHistory}
+                        disabled={loading}
                       >
-                        <MessageSquareX className="h-4 w-4 mr-2" /> Clear chat
-                        history
+                        <MessageSquareX className="h-4 w-4 mr-2" />
+                        {loading ? "Processing..." : "Clear chat history"}
                       </Button>
                       <Button
                         variant="outline"
