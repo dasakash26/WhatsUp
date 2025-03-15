@@ -220,8 +220,8 @@ export const ChatListItem = ({
                 >
                   {getLastMessagePrefix(chat)}
                 </span>
-                {chat.lastMessage.length > 10
-                  ? `${chat.lastMessage.slice(0, 10)}...`
+                {chat.lastMessage.length > 20
+                  ? `${chat.lastMessage.slice(0, 20)}...`
                   : chat.lastMessage}
               </>
             ) : (
