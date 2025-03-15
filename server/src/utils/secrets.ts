@@ -8,6 +8,9 @@ const requiredEnvVars = [
   "CLERK_SECRET_KEY",
   "CLERK_PUBLISHABLE_KEY",
   "CLERK_PEM_PUBLIC_KEY",
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
 ] as const;
 
 const checkEnvVariables = (vars: readonly string[]) => {

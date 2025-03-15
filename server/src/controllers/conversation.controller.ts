@@ -46,14 +46,16 @@ export const getConversations = expressAsyncHandler(
       const extendedConv = conversation as ExtendedConversation;
 
       if (conversation.messages.length > 0) {
-        const _messages = conversation.messages;
+        const _messages = conversation.messages.sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+        );
         const lastMessage = _messages[_messages.length - 1];
         extendedConv.lastMessage = lastMessage.text;
         extendedConv.lastMessageTime = new Date(lastMessage.createdAt);
         extendedConv.lastMessageSenderId = lastMessage.senderId;
 
         // Add sender information for the last message
-        if (lastMessage.senderId) {
+        if (lastMessage.senderId && lastMessage.senderId !== "system") {
           try {
             const senderData = await clerkClient.users.getUser(
               lastMessage.senderId

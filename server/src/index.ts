@@ -10,7 +10,9 @@ import { getUserFromId } from "./controllers/user.controller";
 
 const app = express();
 const server = http.createServer(app);
+
 createWebSocketServer(server);
+
 app.use(
   cors({
     origin: [

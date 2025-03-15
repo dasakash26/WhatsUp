@@ -443,8 +443,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const sendMessage = useCallback(
-    (conversationId: string, text: string, Image?: File) => {
-      if (!userId || (!text && !Image)) return;
+    async (conversationId: string, text: string, image?: File) => {
+      if (!userId || (!text && !image)) return;
+
+      let imageUrl;
+      if (image) {
+        try {
+          const formData = new FormData();
+          formData.append("image", image);
+          const token = await getToken();
+          const res = await api.post("/message/image", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          imageUrl = res.data;
+        } catch (error) {
+          console.error("Error uploading image:", error);
+        }
+      }
 
       setTyping(conversationId, false);
 
@@ -452,12 +470,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         type: "MESSAGE",
         conversationId,
         text,
-        Image,
+        ...(imageUrl && { imageUrl }),
       };
 
       wsSendMessage(message);
     },
-    [setTyping, userId, wsSendMessage]
+    [setTyping, userId, wsSendMessage, getToken]
   );
 
   const isUserOnline = useCallback(

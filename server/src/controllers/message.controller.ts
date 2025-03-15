@@ -36,12 +36,11 @@ export const createMessage = expressAsyncHandler(
     //@ts-ignore
     const userId = req.auth.userId;
     const { conversationId } = req.params;
-    const { text, image } = req.body;
+    const { text } = req.body;
+    const image = req.file;
 
     if (!conversationId || (!text && !image)) {
-      res
-        .status(400)
-        .json({ error: "Conversation ID and content are required" });
+      res.status(400).json({ error: "Conversation ID or content is required" });
       return;
     }
 
@@ -58,16 +57,16 @@ export const createMessage = expressAsyncHandler(
 
     const sender = await clerkClient.users.getUser(userId);
     console.log(sender);
+
+    const imagePath = image ? image.path || image.filename : null;
+
     const message = await prisma.message.create({
       data: {
         text,
-        image,
+        image: imagePath,
         senderId: userId,
-        // @ts-ignore
         senderName: sender.fullName,
-        // @ts-ignore
         senderUsername: sender.username,
-        // @ts-ignore
         senderAvatar: sender.imageUrl,
         conversationId: conversationId as string,
       },

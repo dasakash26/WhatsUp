@@ -17,6 +17,7 @@ import {
   ReadReceiptPayload,
   OnlineStatusPayload,
 } from "./websocket.types";
+import { upload } from "@/middleware/multer.middleware";
 
 async function authenticateUser(token: string): Promise<User | null> {
   try {
@@ -179,7 +180,7 @@ export default function createWebSocketServer(server: HTTPServer) {
     userData: UserJwtPayload,
     data: MessagePayload
   ): Promise<void> {
-    const { conversationId, text, image } = data;
+    const { conversationId, text, imageUrl } = data;
 
     try {
       const username = userData.username || userData.preferred_username;
@@ -189,7 +190,7 @@ export default function createWebSocketServer(server: HTTPServer) {
       const newMessage = await prisma.message.create({
         data: {
           text,
-          image: image || null,
+          image: imageUrl || null,
           senderId: userId,
           senderName: name,
           senderUsername: username,

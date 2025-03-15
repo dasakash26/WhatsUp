@@ -31,6 +31,7 @@ export function Chat({
   } = useChat();
   const { userId } = useAuth();
   const [inputMessage, setInputMessage] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -53,7 +54,12 @@ export function Chat({
   };
 
   const handleSendMessage = () => {
-    if (inputMessage.trim() && activeChat?.id) {
+    if (activeChat?.id && selectedImage) {
+      sendMessage(activeChat.id, inputMessage.trim(), selectedImage);
+      setInputMessage("");
+      setSelectedImage(null);
+      inputRef.current?.focus();
+    } else if (inputMessage.trim() && activeChat?.id) {
       sendMessage(activeChat.id, inputMessage.trim());
       setInputMessage("");
       inputRef.current?.focus();
@@ -165,6 +171,8 @@ export function Chat({
         inputRef={inputRef as React.RefObject<HTMLInputElement>}
         isConnected={isConnected}
         conversationId={currentConversation.id}
+        selectedImage={selectedImage}
+        setSelectedImage={setSelectedImage}
       />
     </div>
   );
