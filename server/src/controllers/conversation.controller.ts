@@ -28,6 +28,7 @@ export const getConversations = expressAsyncHandler(
         messages: true,
       },
     });
+
     for (const conversation of conversations) {
       if (conversation.isGroup === false) {
         const otherParticipant =
@@ -42,14 +43,14 @@ export const getConversations = expressAsyncHandler(
     }
 
     for (const conversation of conversations) {
-      const extendedConvo = conversation as unknown as ExtendedConversation;
+      const extendedConv = conversation as ExtendedConversation;
 
       if (conversation.messages.length > 0) {
-        const sortedMessages = [...conversation.messages];
-        const lastMessage = sortedMessages[sortedMessages.length - 1];
-        extendedConvo.lastMessage = lastMessage.text;
-        extendedConvo.lastMessageTime = new Date(lastMessage.createdAt);
-        extendedConvo.lastMessageSenderId = lastMessage.senderId;
+        const _messages = conversation.messages;
+        const lastMessage = _messages[_messages.length - 1];
+        extendedConv.lastMessage = lastMessage.text;
+        extendedConv.lastMessageTime = new Date(lastMessage.createdAt);
+        extendedConv.lastMessageSenderId = lastMessage.senderId;
 
         // Add sender information for the last message
         if (lastMessage.senderId) {
@@ -57,30 +58,30 @@ export const getConversations = expressAsyncHandler(
             const senderData = await clerkClient.users.getUser(
               lastMessage.senderId
             );
-            extendedConvo.lastMessageSenderName =
+            extendedConv.lastMessageSenderName =
               senderData.firstName && senderData.lastName
                 ? `${senderData.firstName} ${senderData.lastName}`
                 : null;
-            extendedConvo.lastMessageSenderUsername =
+            extendedConv.lastMessageSenderUsername =
               senderData.username || null;
-            extendedConvo.lastMessageSenderAvatar = senderData.imageUrl || null;
+            extendedConv.lastMessageSenderAvatar = senderData.imageUrl || null;
           } catch (error) {
             console.error(
               `Error fetching sender data for ID ${lastMessage.senderId}:`,
               error
             );
-            extendedConvo.lastMessageSenderName = null;
-            extendedConvo.lastMessageSenderUsername = null;
-            extendedConvo.lastMessageSenderAvatar = null;
+            extendedConv.lastMessageSenderName = null;
+            extendedConv.lastMessageSenderUsername = null;
+            extendedConv.lastMessageSenderAvatar = null;
           }
         }
       } else {
-        extendedConvo.lastMessage = null;
-        extendedConvo.lastMessageTime = null;
-        extendedConvo.lastMessageSenderId = null;
-        extendedConvo.lastMessageSenderName = null;
-        extendedConvo.lastMessageSenderUsername = null;
-        extendedConvo.lastMessageSenderAvatar = null;
+        extendedConv.lastMessage = null;
+        extendedConv.lastMessageTime = null;
+        extendedConv.lastMessageSenderId = null;
+        extendedConv.lastMessageSenderName = null;
+        extendedConv.lastMessageSenderUsername = null;
+        extendedConv.lastMessageSenderAvatar = null;
       }
     }
 
