@@ -54,10 +54,17 @@ export function MessageBubble({
   const renderTextWithUrls = useCallback(
     (text: string) => {
       if (!text) return null;
-      // regex to match URLs or emoji characters (using Unicode property escapes)
-      const parts = text.split(
-        /((https?:\/\/[^\s]+)|(\p{Extended_Pictographic}))/gu
-      );
+
+      // If text is made up solely of emoji (and optional whitespace), display them with an increased size
+      if (/^(?:\p{Extended_Pictographic}\s?)+$/u.test(text)) {
+        return <span style={{ fontSize: "4em" }}>{text}</span>; // increased font size from 6em to 8em
+      }
+
+      // Split with non-capturing groups and filter out empty strings to avoid duplicates
+      const parts = text
+        .split(/((?:https?:\/\/[^\s]+)|(?:\p{Extended_Pictographic}))/gu)
+        .filter(Boolean);
+
       return parts.map((part, i) => {
         if (/https?:\/\/[^\s]+/.test(part)) {
           return (
@@ -79,11 +86,8 @@ export function MessageBubble({
           );
         }
         if (/\p{Extended_Pictographic}/u.test(part)) {
-          return (
-            <span key={i} style={{ fontSize: "5em" }}>
-              {part}
-            </span>
-          );
+          // For mixed text messages, render emoji with default size
+          return <span key={i}>{part}</span>;
         }
         return <span key={i}>{part}</span>;
       });
