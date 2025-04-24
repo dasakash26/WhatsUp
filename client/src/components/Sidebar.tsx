@@ -119,35 +119,37 @@ export function Sidebar({
 
         <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
-        <ScrollArea className="flex-1">
-          <div className="space-y-1 p-2">
-            {isLoading ? (
-              Array(5)
-                .fill(0)
-                .map((_, index) => (
-                  <Card key={index} className="p-0 overflow-hidden shadow-sm">
-                    <ChatSkeleton />
-                  </Card>
+        <div className="flex-1 flex flex-col min-h-0">
+          <ScrollArea className="h-full border">
+            <div className="space-y-1 p-2">
+              {isLoading ? (
+                Array(5)
+                  .fill(0)
+                  .map((_, index) => (
+                    <Card key={index} className="p-0 overflow-hidden shadow-sm">
+                      <ChatSkeleton />
+                    </Card>
+                  ))
+              ) : filteredChats.length > 0 ? (
+                // Chat list
+                filteredChats.map((chat) => (
+                  <ChatListItem
+                    key={chat.id}
+                    chat={chat}
+                    isActive={currentConversationId === chat.id}
+                    userId={userId ?? null}
+                    onClick={() => handleChatSelection(chat.id)}
+                  />
                 ))
-            ) : filteredChats.length > 0 ? (
-              // Chat list
-              filteredChats.map((chat) => (
-                <ChatListItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={currentConversationId === chat.id}
-                  userId={userId ?? null}
-                  onClick={() => handleChatSelection(chat.id)}
-                />
-              ))
-            ) : (
-              <div className="flex flex-col items-center justify-center h-32 text-muted-foreground gap-2 p-4">
-                <Search className="h-5 w-5 opacity-50" />
-                <p className="text-center text-sm">No chats found</p>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-32 text-muted-foreground gap-2 p-4">
+                  <Search className="h-5 w-5 opacity-50" />
+                  <p className="text-center text-sm">No chats found</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </aside>
     </>
   );
