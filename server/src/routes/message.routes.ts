@@ -6,7 +6,7 @@ import {
   getConversationMessages,
   updateMessage,
 } from "../controllers/message.controller";
-import { upload } from "@/middleware/multer.middleware";
+import { upload } from "../middleware/multer.middleware";
 
 const router = Router();
 
