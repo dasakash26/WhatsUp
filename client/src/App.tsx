@@ -55,11 +55,13 @@ function App() {
             onMobileClose={closeSidebar}
           />
 
-          <Chat
-            className="flex-1"
-            isMobileSidebarOpen={isSidebarOpen}
-            onMobileMenuClick={toggleSidebar}
-          />
+          <div className="flex-1 relative">
+            <Chat
+              className="h-full"
+              isMobileSidebarOpen={isSidebarOpen}
+              onMobileMenuClick={toggleSidebar}
+            />
+          </div>
         </main>
         <SystemMessage
           type="loading"

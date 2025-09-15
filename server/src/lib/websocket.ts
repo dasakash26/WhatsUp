@@ -17,7 +17,6 @@ import {
   ReadReceiptPayload,
   OnlineStatusPayload,
 } from "./websocket.types";
-import { upload } from "@/middleware/multer.middleware";
 
 async function authenticateUser(token: string): Promise<User | null> {
   try {
@@ -450,7 +449,7 @@ export default function createWebSocketServer(server: HTTPServer) {
 
       ws.on("close", (code, reason) => {
         clients.delete(String(userId));
-        onlineUsers.delete(userId); // Mark user as offline
+        onlineUsers.delete(userId); 
         broadcastOnlineStatus(userId, false).catch((err) =>
           console.error("Error broadcasting offline status:", err)
         );

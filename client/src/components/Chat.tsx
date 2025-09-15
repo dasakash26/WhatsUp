@@ -7,6 +7,9 @@ import { ChatInput } from "./Messages/ChatInput";
 import { EmptyChat } from "./Messages/EmptyChat";
 import { cn } from "@/lib/utils";
 import { TypingIndicator } from "./Messages/TypingIndicator";
+import VideoCall from "./videoCall/video";
+import { Button } from "@/components/ui/button";
+import { X, MessageCircle, ChevronDown } from "lucide-react";
 
 interface ChatProps extends React.HTMLAttributes<HTMLDivElement> {
   onMobileMenuClick?: () => void;
@@ -33,6 +36,8 @@ export function Chat({
   const { userId } = useAuth();
   const [inputMessage, setInputMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [isChatOverlayOpen, setIsChatOverlayOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -128,7 +133,7 @@ export function Chat({
   return (
     <div
       className={cn(
-        "flex flex-col h-full",
+        "flex flex-col h-full relative",
         isMobileSidebarOpen
           ? "opacity-40 pointer-events-none md:opacity-100 md:pointer-events-auto"
           : "opacity-100",
@@ -140,6 +145,7 @@ export function Chat({
         chat={chatForHeader}
         onMobileMenuClick={onMobileMenuClick}
         isMobileSidebarOpen={isMobileSidebarOpen}
+        onStartVideoCall={() => setIsCallActive(true)}
       />
 
       {connectionError && (
@@ -154,27 +160,123 @@ export function Chat({
         </div>
       )}
 
-      <MessageList
-        messages={formattedMessages}
-        currentUserId={userId || undefined}
-        activeChatName={currentConversation.name}
-        formatMessageTime={formatMessageTime}
-        messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement>}
-        setIsAtBottom={setIsAtBottom}
-      />
+      {isCallActive ? (
+        <div className="fixed inset-0 z-50 bg-black">
+          <VideoCall conversationId={currentConversation.id} />
 
-      <TypingIndicator conversationId={currentConversation.id} />
+          <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-40">
+            <div className="bg-black/30 backdrop-blur-md rounded-full px-4 py-2">
+              <p className="text-white text-sm font-medium">
+                {currentConversation.name}
+              </p>
+            </div>
 
-      <ChatInput
-        inputMessage={inputMessage}
-        setInputMessage={setInputMessage}
-        handleSendMessage={handleSendMessage}
-        inputRef={inputRef as React.RefObject<HTMLInputElement>}
-        isConnected={isConnected}
-        conversationId={currentConversation.id}
-        selectedImage={selectedImage}
-        setSelectedImage={setSelectedImage}
-      />
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => setIsChatOverlayOpen(!isChatOverlayOpen)}
+                size="icon"
+                className="h-10 w-10 rounded-full bg-black/30 backdrop-blur-md border-0 hover:bg-black/50 text-white"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </Button>
+              <Button
+                onClick={() => setIsCallActive(false)}
+                size="icon"
+                className="h-10 w-10 rounded-full bg-red-500/90 backdrop-blur-md border-0 hover:bg-red-600 text-white"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              "absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl transition-transform duration-300 ease-out z-30",
+              isChatOverlayOpen
+                ? "transform translate-y-0"
+                : "transform translate-y-full"
+            )}
+            style={{ height: "60%" }}
+          >
+            <div className="flex justify-center py-3 border-b border-gray-200/50 dark:border-gray-700/50">
+              <Button
+                onClick={() => setIsChatOverlayOpen(false)}
+                variant="ghost"
+                size="sm"
+                className="flex items-center space-x-2 text-gray-600 dark:text-gray-400"
+              >
+                <ChevronDown className="h-4 w-4" />
+                <span className="text-sm">Hide Chat</span>
+              </Button>
+            </div>
+
+            <div className="flex flex-col h-full">
+              <div className="flex-1 overflow-y-auto px-4 pt-2">
+                <MessageList
+                  messages={formattedMessages}
+                  currentUserId={userId || undefined}
+                  activeChatName={currentConversation.name}
+                  formatMessageTime={formatMessageTime}
+                  messagesEndRef={
+                    messagesEndRef as React.RefObject<HTMLDivElement>
+                  }
+                  setIsAtBottom={setIsAtBottom}
+                />
+                <TypingIndicator conversationId={currentConversation.id} />
+              </div>
+
+              <div className="border-t border-gray-200/50 dark:border-gray-700/50 p-8 mb-8">
+                <ChatInput
+                  inputMessage={inputMessage}
+                  setInputMessage={setInputMessage}
+                  handleSendMessage={handleSendMessage}
+                  inputRef={inputRef as React.RefObject<HTMLInputElement>}
+                  isConnected={isConnected}
+                  conversationId={currentConversation.id}
+                  selectedImage={selectedImage}
+                  setSelectedImage={setSelectedImage}
+                />
+              </div>
+            </div>
+          </div>
+
+          {!isChatOverlayOpen && (
+            <div className="absolute bottom-4 left-4 right-4 flex justify-center z-30">
+              <Button
+                onClick={() => setIsChatOverlayOpen(true)}
+                className="bg-black/30 backdrop-blur-md hover:bg-black/50 text-white border-0 rounded-full px-6 py-2"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Show Chat
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          <MessageList
+            messages={formattedMessages}
+            currentUserId={userId || undefined}
+            activeChatName={currentConversation.name}
+            formatMessageTime={formatMessageTime}
+            messagesEndRef={messagesEndRef as React.RefObject<HTMLDivElement>}
+            setIsAtBottom={setIsAtBottom}
+          />
+
+          <TypingIndicator conversationId={currentConversation.id} />
+
+          <ChatInput
+            inputMessage={inputMessage}
+            setInputMessage={setInputMessage}
+            handleSendMessage={handleSendMessage}
+            inputRef={inputRef as React.RefObject<HTMLInputElement>}
+            isConnected={isConnected}
+            conversationId={currentConversation.id}
+            selectedImage={selectedImage}
+            setSelectedImage={setSelectedImage}
+          />
+        </>
+      )}
     </div>
   );
 }

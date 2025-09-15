@@ -49,12 +49,14 @@ interface ChatHeaderProps {
   chat: Chat;
   onMobileMenuClick?: () => void;
   isMobileSidebarOpen?: boolean;
+  onStartVideoCall?: () => void;
 }
 
 export function ChatHeader({
   chat,
   onMobileMenuClick,
   isMobileSidebarOpen,
+  onStartVideoCall,
 }: ChatHeaderProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -178,7 +180,12 @@ export function ChatHeader({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden sm:flex">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:flex"
+                onClick={onStartVideoCall}
+              >
                 <Video className="h-5 w-5" />
               </Button>
             </TooltipTrigger>

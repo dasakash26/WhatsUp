@@ -18,6 +18,27 @@
   background-position: 0px 0px;
 }
 
+/* Video Call Styles */
+.str-video__call-content {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+.str-video__speaker-layout {
+  height: 100% !important;
+}
+
+.str-video__participant-video {
+  border-radius: 8px;
+}
+
+.str-video__call-controls {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 8px 16px;
+}
+
 /* Dark mode support */
 :root.dark .bg-grid-small {
   --grid-color: var(--grid-color-dark);
