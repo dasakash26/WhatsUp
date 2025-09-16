@@ -1,4 +1,4 @@
-import { REDIS_PASSWORD, REDIS_URL } from "@/utils/secrets";
+import { REDIS_PASSWORD, REDIS_URL } from "../utils/secrets";
 import { createClient } from "redis";
 
 class RedisClient {
