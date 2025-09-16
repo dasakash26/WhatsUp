@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatSkeleton } from "@/components/chat/ChatSkeleton";
 import { ChatListItem } from "@/components/chat/ChatListItem";
 import { SearchBar } from "@/components/chat/SearchBar";
+import VideoClientManager from "@/lib/VideoClientManager";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;

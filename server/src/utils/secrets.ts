@@ -13,6 +13,8 @@ const requiredEnvVars = [
   "CLOUDINARY_API_SECRET",
   "STREAM_API_KEY",
   "STREAM_API_SECRET",
+  "REDIS_URL",
+  "REDIS_PASSWORD",
 ] as const;
 
 const checkEnvVariables = (vars: readonly string[]) => {
@@ -35,4 +37,6 @@ export const CLIENT_URL = process.env.CLIENT_URL!;
 export const CLERK_PEM_PUBLIC_KEY = process.env.CLERK_PEM_PUBLIC_KEY!;
 export const STREAM_API_KEY = process.env.STREAM_API_KEY!;
 export const STREAM_API_SECRET = process.env.STREAM_API_SECRET!;
+export const REDIS_URL = process.env.REDIS_URL!;
+export const REDIS_PASSWORD = process.env.REDIS_PASSWORD!;
 console.log("> All required environment variables are set.");

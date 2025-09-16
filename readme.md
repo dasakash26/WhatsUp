@@ -24,7 +24,9 @@ You can try the application at: [https://whatsup-chat.onrender.com/](https://wha
 ## Features
 
 - **Real-time messaging**: Instant message delivery using WebSocket technology
+- **Video calling**: HD video calls with screen sharing and call controls
 - **User authentication**: Secure user management with Clerk
+- **Redis caching**: High-performance caching for conversations and messages
 - **Responsive design**: Works seamlessly on mobile, tablet, and desktop
 - **Dark/Light mode**: Theme customization for user comfort
 - **Group conversations**: Create and manage group chats
@@ -50,7 +52,9 @@ You can try the application at: [https://whatsup-chat.onrender.com/](https://wha
 - TypeScript
 - PostgreSQL database
 - Prisma ORM
+- Redis for caching
 - WebSockets for real-time communication
+- Stream.io for video calling
 
 ## Getting Started
 
@@ -79,6 +83,10 @@ You can try the application at: [https://whatsup-chat.onrender.com/](https://wha
    # Example:
    # DATABASE_URL="postgresql://username:password@localhost:5432/whatsup"
    # CLERK_SECRET_KEY=your_clerk_secret_key
+   # REDIS_URL=redis://localhost:6379
+   # REDIS_PASSWORD=your_redis_password
+   # STREAM_API_KEY=your_stream_api_key
+   # STREAM_API_SECRET=your_stream_api_secret
 
    # Run migrations
    npx prisma migrate dev
@@ -98,6 +106,7 @@ You can try the application at: [https://whatsup-chat.onrender.com/](https://wha
    # VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
    # VITE_API_URL=http://localhost:4000/api
    # VITE_WS_URL=ws://localhost:4000
+   # VITE_STREAM_API_KEY=your_stream_api_key
 
    # Start the development server
    npm run dev
@@ -119,64 +128,30 @@ You can try the application at: [https://whatsup-chat.onrender.com/](https://wha
 - Frontend: `cd client && npm run build`
 - Backend: `cd server && npm run build`
 
-## Fixes and Enhancements
+## New Features
 
-This section highlights recent fixes and additional features to improve user experience:
+### Video Calling System
 
-### Fixes:
+- **HD Video Calls**: Crystal-clear video calling with Stream.io integration
+- **Screen Sharing**: Share your screen during calls
+- **Call Controls**: Mute/unmute, video on/off, end call functionality
+- **Call Notifications**: Real-time ringing notifications for incoming calls
+- **Call History**: Track call history and missed calls
 
-- **Typing Indicator Alert:**
+### Redis Caching System
 
-  - Added real-time typing alerts to notify users when someone is typing in a conversation.
+- **Conversation Caching**: Fast loading of conversation lists with Redis
+- **Message Caching**: Cached message history for quick retrieval
+- **Cache Invalidation**: Automatic cache updates when data changes
+- **Error Handling**: Robust error handling for cache operations
+- **Performance**: Reduced database load and faster response times
 
-- **Read Receipt Status:**
+### Enhanced Cache Management
 
-  - Enhanced message tracking with clear indicators for sent, delivered, and read statuses.
-
-- **Conversation Creation Error Handling:**
-
-  - Improved error handling when creating new conversations to provide better feedback to users.
-
-- **Group Details Improvements:**
-
-  - Resolved issues with displaying participant names in group chats and group details.
-
-- **User Sidebar Enhancements:**
-
-  - Fixed bugs related to showing user profile images in the sidebar for better identification.
-
-- **Image Sending Feature:**
-  - Addressed issues in media sharing, ensuring smooth image uploads and display within chats.
-
-### New Features:
-
-- **Participant Names in Groups:**
-
-  - Group chats now display participant names prominently for easier identification.
-
-- **User Images in Sidebar:**
-
-  - Users' profile pictures are now visible in the sidebar for better visual representation.
-
-- **Image Sharing in Conversations:**
-
-  - Users can now share images seamlessly within individual or group chats.
-  - Supports common image formats (JPEG, PNG, GIF, WebP)
-  - Preview images before sending
-  - Automatic image optimization for faster loading
-
-- **Group Details Display:**
-
-  - Added a dedicated section to view group details, including participants and group settings.
-  - Admins can manage participant permissions
-  - Edit group name, description, and avatar
-  - See when participants last accessed the group
-
-- **Dark Mode Enhancements:**
-  - Improved dark mode usability with better contrast and readability adjustments.
-  - Automatic theme switching based on device preferences
-  - Persistent theme selection across sessions
-  - Refined color palette for reduced eye strain during night use
+- **Smart Invalidation**: Cache automatically clears when conversations/messages are modified
+- **Participant-based Caching**: Cache keys based on user participation
+- **TTL Management**: Optimized cache expiration times (5min conversations, 10min messages)
+- **Fallback Handling**: Graceful degradation when Redis is unavailable
 
 ## Project Structure
 
@@ -187,12 +162,11 @@ WhatsUp/
 │   │   └── logo.webp       # Application logo
 │   ├── src/                # Source code
 │   │   ├── components/     # Reusable UI components
+│   │   │   ├── videoCall/  # Video calling components
+│   │   │   ├── ui/         # UI library components
 │   │   ├── contexts/       # React contexts for state management
 │   │   ├── hooks/          # Custom React hooks
 │   │   ├── lib/            # Utility functions and helpers
-│   │   ├── pages/          # Application pages/routes
-│   │   ├── services/       # API communication services
-│   │   ├── styles/         # Global styles and Tailwind configuration
 │   │   ├── types/          # TypeScript type definitions
 │   │   ├── App.tsx         # Main application component
 │   │   └── main.tsx        # Application entry point
@@ -207,10 +181,10 @@ WhatsUp/
 │   │   └── schema.prisma   # Database schema
 │   ├── src/                # Source code
 │   │   ├── controllers/    # Request handlers
+│   │   ├── lib/            # Cache management and utilities
+│   │   │   ├── cacheManager.ts # Redis cache system
 │   │   ├── middlewares/    # Express middlewares
-│   │   ├── models/         # Data models
 │   │   ├── routes/         # API routes
-│   │   ├── services/       # Business logic
 │   │   ├── utils/          # Utility functions
 │   │   ├── websocket/      # WebSocket implementation
 │   │   └── index.ts        # Server entry point

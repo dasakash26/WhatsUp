@@ -2,8 +2,8 @@ import expressAsyncHandler from "express-async-handler";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { clerkClient } from "@clerk/express";
+import { Cache } from "../lib/cacheManager";
 
-// Get messages for a conversation
 export const getConversationMessages = expressAsyncHandler(
   async (req: Request, res: Response) => {
     const { conversationId } = req.params;
@@ -13,7 +13,16 @@ export const getConversationMessages = expressAsyncHandler(
       return;
     }
 
-    const messages = await prisma.message.findMany({
+    const cacheKey = Cache.getMsgKey(conversationId);
+    const cached = await Cache.get(cacheKey);
+
+    if (cached) {
+      console.log("Returning messages from cache");
+      res.status(200).json(cached);
+      return;
+    }
+
+    const msgs = await prisma.message.findMany({
       where: {
         conversationId: conversationId as string,
       },
@@ -22,15 +31,18 @@ export const getConversationMessages = expressAsyncHandler(
       },
     });
 
-    res.status(200).json({
-      messages,
-      length: messages.length,
-    });
+    const resp = {
+      messages: msgs,
+      length: msgs.length,
+    };
+
+    await Cache.set(cacheKey, resp, Cache.MSG_TTL);
+
+    res.status(200).json(resp);
     return;
   }
 );
 
-// Create a new message
 export const createMessage = expressAsyncHandler(
   async (req: Request, res: Response) => {
     //@ts-ignore
@@ -44,13 +56,13 @@ export const createMessage = expressAsyncHandler(
       return;
     }
 
-    const conversation = await prisma.conversation.findUnique({
+    const conv = await prisma.conversation.findUnique({
       where: {
         id: conversationId as string,
       },
     });
 
-    if (!conversation) {
+    if (!conv) {
       res.status(404).json({ error: "Conversation not found" });
       return;
     }
@@ -60,7 +72,7 @@ export const createMessage = expressAsyncHandler(
 
     const imagePath = image ? image.path || image.filename : null;
 
-    const message = await prisma.message.create({
+    const msg = await prisma.message.create({
       data: {
         text,
         image: imagePath,
@@ -72,12 +84,13 @@ export const createMessage = expressAsyncHandler(
       },
     });
 
-    res.status(200).json(message);
+    await Cache.invalidateConvAndMsgs(conv.participants, conversationId);
+
+    res.status(200).json(msg);
     return;
   }
 );
 
-// Update a message
 export const updateMessage = expressAsyncHandler(
   async (req: Request, res: Response) => {
     const { messageId } = req.params;
@@ -88,21 +101,47 @@ export const updateMessage = expressAsyncHandler(
       return;
     }
 
-    //conditionally update the message if not null
-    const message = await prisma.message.update({
+    const existingMsg = await prisma.message.findUnique({
       where: {
         id: messageId as string,
       },
-      data: {
-        text,
-        image,
-        status,
+    });
+
+    if (!existingMsg) {
+      res.status(404).json({ error: "Message not found" });
+      return;
+    }
+
+    const updateData: any = {};
+    if (text !== undefined) updateData.text = text;
+    if (image !== undefined) updateData.image = image;
+    if (status !== undefined) updateData.status = status;
+
+    const msg = await prisma.message.update({
+      where: {
+        id: messageId as string,
+      },
+      data: updateData,
+    });
+
+    const conv = await prisma.conversation.findUnique({
+      where: {
+        id: existingMsg.conversationId,
       },
     });
+
+    if (conv) {
+      await Cache.invalidateConvAndMsgs(
+        conv.participants,
+        existingMsg.conversationId
+      );
+    }
+
+    res.status(200).json(msg);
+    return;
   }
 );
 
-// Delete a message
 export const deleteMessage = expressAsyncHandler(
   async (req: Request, res: Response) => {
     const { messageId } = req.params;
@@ -112,13 +151,34 @@ export const deleteMessage = expressAsyncHandler(
       return;
     }
 
-    const message = await prisma.message.delete({
+    const msg = await prisma.message.findUnique({
       where: {
         id: messageId as string,
       },
     });
 
-    res.status(200).json(message);
+    if (!msg) {
+      res.status(404).json({ error: "Message not found" });
+      return;
+    }
+
+    const conv = await prisma.conversation.findUnique({
+      where: {
+        id: msg.conversationId,
+      },
+    });
+
+    await prisma.message.delete({
+      where: {
+        id: messageId as string,
+      },
+    });
+
+    if (conv) {
+      await Cache.invalidateConvAndMsgs(conv.participants, msg.conversationId);
+    }
+
+    res.status(200).json({ message: "Message deleted successfully" });
     return;
   }
 );

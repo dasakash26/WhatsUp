@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import expressAsyncHandler from "express-async-handler";
 import { clerkClient } from "@clerk/express";
+import { Cache } from "../lib/cacheManager";
 
 interface ExtendedConversation {
   name?: string;
@@ -17,8 +18,16 @@ export const getConversations = expressAsyncHandler(
   async (req: Request, res: Response) => {
     //@ts-ignore
     const userId = req.auth.userId;
+    const cacheKey = Cache.getConvKey(userId);
+    const cached = await Cache.get(cacheKey);
 
-    const conversations = await prisma.conversation.findMany({
+    if (cached) {
+      console.log("Returning conversations from cache");
+      res.status(200).json(cached);
+      return;
+    }
+
+    const convs = await prisma.conversation.findMany({
       where: {
         participants: {
           has: userId,
@@ -29,36 +38,35 @@ export const getConversations = expressAsyncHandler(
       },
     });
 
-    for (const conversation of conversations) {
-      if (conversation.isGroup === false) {
+    for (const conv of convs) {
+      if (conv.isGroup === false) {
         const otherParticipant =
-          userId === conversation.participants[0]
-            ? conversation.participants[1]
-            : conversation.participants[0];
+          userId === conv.participants[0]
+            ? conv.participants[1]
+            : conv.participants[0];
         const userData = await clerkClient.users.getUser(otherParticipant);
-        conversation.name = userData.firstName
+        conv.name = userData.firstName
           ? `${userData.firstName} ${userData.lastName}`
           : userData.username;
       }
     }
 
-    for (const conversation of conversations) {
-      const extendedConv = conversation as ExtendedConversation;
+    for (const conv of convs) {
+      const extendedConv = conv as ExtendedConversation;
 
-      if (conversation.messages.length > 0) {
-        const _messages = conversation.messages.sort(
-          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+      if (conv.messages.length > 0) {
+        const msgs = conv.messages.sort(
+          (a: any, b: any) => a.createdAt.getTime() - b.createdAt.getTime()
         );
-        const lastMessage = _messages[_messages.length - 1];
-        extendedConv.lastMessage = lastMessage.text;
-        extendedConv.lastMessageTime = new Date(lastMessage.createdAt);
-        extendedConv.lastMessageSenderId = lastMessage.senderId;
+        const lastMsg = msgs[msgs.length - 1];
+        extendedConv.lastMessage = lastMsg.text;
+        extendedConv.lastMessageTime = new Date(lastMsg.createdAt);
+        extendedConv.lastMessageSenderId = lastMsg.senderId;
 
-        // Add sender information for the last message
-        if (lastMessage.senderId && lastMessage.senderId !== "system") {
+        if (lastMsg.senderId && lastMsg.senderId !== "system") {
           try {
             const senderData = await clerkClient.users.getUser(
-              lastMessage.senderId
+              lastMsg.senderId
             );
             extendedConv.lastMessageSenderName =
               senderData.firstName && senderData.lastName
@@ -69,7 +77,7 @@ export const getConversations = expressAsyncHandler(
             extendedConv.lastMessageSenderAvatar = senderData.imageUrl || null;
           } catch (error) {
             console.error(
-              `Error fetching sender data for ID ${lastMessage.senderId}:`,
+              `Error fetching sender data for ID ${lastMsg.senderId}:`,
               error
             );
             extendedConv.lastMessageSenderName = null;
@@ -87,7 +95,8 @@ export const getConversations = expressAsyncHandler(
       }
     }
 
-    res.status(200).json(conversations);
+    await Cache.set(cacheKey, convs);
+    res.status(200).json(convs);
     return;
   }
 );
@@ -112,7 +121,6 @@ export const getConversation = expressAsyncHandler(
   }
 );
 
-// Create a new conversation
 export const createConversation = expressAsyncHandler(
   async (req: Request, res: Response) => {
     //@ts-ignore
@@ -122,20 +130,19 @@ export const createConversation = expressAsyncHandler(
     if (!participants || participants.length === 0) {
       throw new Error("Participants are required");
     }
-    participants.filter((participant: string) => participant !== userId);
+    participants.filter((p: string) => p !== userId);
     const users = await clerkClient.users.getUserList({
       username: participants,
     });
 
-    const participantIds = users.data.map((user) => user.id);
+    const participantIds = users.data.map((u) => u.id);
 
     if (participantIds.length !== participants.length) {
       throw new Error("One or more usernames were not found");
     }
 
     if (participantIds.length === 1) {
-      // Create direct message conversation
-      const existingConversation = await prisma.conversation.findFirst({
+      const existingConv = await prisma.conversation.findFirst({
         where: {
           isGroup: false,
           participants: {
@@ -144,18 +151,17 @@ export const createConversation = expressAsyncHandler(
         },
       });
 
-      if (existingConversation) {
-        res.status(200).json(existingConversation);
+      if (existingConv) {
+        res.status(200).json(existingConv);
         return;
       }
 
-      // Get the other user's details
       const otherUser = await clerkClient.users.getUser(participantIds[0]);
       const otherUserName = otherUser.firstName
         ? `${otherUser.firstName} ${otherUser.lastName || ""}`
         : otherUser.username || "Unknown User";
 
-      const newConversation = await prisma.conversation.create({
+      const newConv = await prisma.conversation.create({
         data: {
           name:
             name ||
@@ -168,11 +174,12 @@ export const createConversation = expressAsyncHandler(
         },
       });
 
-      res.status(201).json(newConversation);
+      await Cache.invalidateConvCache([userId, participantIds[0]]);
+
+      res.status(201).json(newConv);
       return;
     } else {
-      // Create group conversation
-      const newConversation = await prisma.conversation.create({
+      const newConv = await prisma.conversation.create({
         data: {
           name: name || "Group chat",
           isGroup: true,
@@ -180,13 +187,14 @@ export const createConversation = expressAsyncHandler(
         },
       });
 
-      res.status(201).json(newConversation);
+      await Cache.invalidateConvCache([userId, ...participantIds]);
+
+      res.status(201).json(newConv);
       return;
     }
   }
 );
 
-// Update a conversation
 export const updateConversation = expressAsyncHandler(
   async (req: Request, res: Response) => {
     const { conversationId } = req.params;
@@ -197,7 +205,7 @@ export const updateConversation = expressAsyncHandler(
       return;
     }
 
-    const conversation = await prisma.conversation.update({
+    const conv = await prisma.conversation.update({
       where: {
         id: conversationId as string,
       },
@@ -206,12 +214,13 @@ export const updateConversation = expressAsyncHandler(
       },
     });
 
-    res.status(200).json(conversation);
+    await Cache.invalidateConvCache(conv.participants);
+
+    res.status(200).json(conv);
     return;
   }
 );
 
-// Delete a conversation
 export const deleteConversation = expressAsyncHandler(
   async (req: Request, res: Response) => {
     const { conversationId } = req.params;
@@ -221,11 +230,24 @@ export const deleteConversation = expressAsyncHandler(
       return;
     }
 
+    const conv = await prisma.conversation.findUnique({
+      where: {
+        id: conversationId as string,
+      },
+    });
+
+    if (!conv) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+
     await prisma.conversation.delete({
       where: {
         id: conversationId as string,
       },
     });
+
+    await Cache.invalidateConvCache(conv.participants);
 
     res.status(204).send();
     return;

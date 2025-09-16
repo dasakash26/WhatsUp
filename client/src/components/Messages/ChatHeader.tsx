@@ -207,7 +207,6 @@ export function ChatHeader({
         </TooltipProvider>
       </div>
 
-      {/* Alert Dialog for Delete Confirmation */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -442,7 +441,6 @@ export function ChatHeader({
               </Tabs>
             )}
 
-            {/* Group Participants */}
             {chat.isGroup && (
               <div className="w-full pt-2">
                 <h4 className="font-medium mb-3 text-center">Participants</h4>

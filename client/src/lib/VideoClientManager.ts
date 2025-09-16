@@ -95,6 +95,7 @@ class VideoClientManager {
   }
 
   getActiveCalls(): string[] {
+    console.log("Active calls:", Array.from(this.activeCalls.keys()));
     return Array.from(this.activeCalls.keys());
   }
 }
