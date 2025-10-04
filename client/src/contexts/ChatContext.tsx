@@ -40,8 +40,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
 
-  const onlineStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
   useEffect(() => {
     console.log("Typing Indicators:", typingIndicators);
     console.log("Online Users:", Array.from(onlineUsers));
@@ -81,194 +79,204 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleWebSocketMessage = useCallback(
     (data: WebSocketMessage) => {
-      console.log("Received WebSocket message:", data);
+      const sender = data.senderId;
+      if (!onlineUsers.has(sender)) {
+        setOnlineUsers((prev) => new Set(prev).add(sender));
+      }
 
-      if (data.type === "NEW_MESSAGE") {
-        const imageUrl =
-          typeof data.imageUrl === "string" && data.imageUrl.trim() !== ""
-            ? data.imageUrl
-            : undefined;
+      switch (data.type) {
+        case "MESSAGE": {
+          const imageUrl =
+            typeof data.imageUrl === "string" && data.imageUrl.trim() !== ""
+              ? data.imageUrl
+              : undefined;
 
-        const messageDate = new Date(data.createdAt);
-        const newMessage: Message = {
-          id: data.id as string,
-          text: data.text as string,
-          status: "sent",
-          senderId: data.senderId as string,
-          senderName: data.senderName as string,
-          senderUsername: data.senderUsername as string,
-          senderAvatar: data.senderAvatar as string | null,
-          conversationId: data.conversationId as string,
-          createdAt: messageDate,
-          type: "NEW_MESSAGE",
-          image: imageUrl,
-          tempMessageId: data.tempMessageId as string,
-        };
+          const messageDate = new Date(data.createdAt);
+          const newMessage: Message = {
+            id: data.id as string,
+            text: data.text as string,
+            status: "sent",
+            senderId: data.senderId as string,
+            senderName: data.senderName as string,
+            senderUsername: data.senderUsername as string,
+            senderAvatar: data.senderAvatar as string | null,
+            conversationId: data.conversationId as string,
+            createdAt: messageDate,
+            type: "MESSAGE",
+            image: imageUrl,
+            tempMessageId: data.tempMessageId as string,
+          };
 
-        console.log("Processing received message:", newMessage);
+          console.log("Processing received message:", newMessage);
 
-        setMessages((prev) => {
-          const tempIndex = prev.findIndex(
-            (msg) => msg.id === data.tempMessageId
-          );
-
-          const fallbackTempIndex =
-            tempIndex === -1
-              ? prev.findIndex(
-                  (msg) =>
-                    msg.id.startsWith("temp-") &&
-                    msg.conversationId === newMessage.conversationId &&
-                    msg.text === newMessage.text &&
-                    msg.senderId === userId
-                )
-              : -1;
-
-          if (tempIndex !== -1 || fallbackTempIndex !== -1) {
-            const updated = [...prev];
-            const indexToReplace =
-              tempIndex !== -1 ? tempIndex : fallbackTempIndex;
-            updated[indexToReplace] = newMessage;
-            return updated;
-          }
-
-          const existingIndex = prev.findIndex(
-            (msg) => msg.id === newMessage.id
-          );
-          if (existingIndex !== -1) {
-            return prev;
-          }
-
-          return [...prev, newMessage];
-        });
-
-        setConversations((prevConversations) =>
-          prevConversations.map((conv) => {
-            if (conv.id !== newMessage.conversationId) return conv;
-
-            const tempIndex = conv.messages.findIndex(
+          setMessages((prev) => {
+            const tempIndex = prev.findIndex(
               (msg) => msg.id === data.tempMessageId
             );
 
             const fallbackTempIndex =
               tempIndex === -1
-                ? conv.messages.findIndex(
+                ? prev.findIndex(
                     (msg) =>
                       msg.id.startsWith("temp-") &&
+                      msg.conversationId === newMessage.conversationId &&
                       msg.text === newMessage.text &&
                       msg.senderId === userId
                   )
                 : -1;
 
-            let updatedMessages;
-
             if (tempIndex !== -1 || fallbackTempIndex !== -1) {
-              updatedMessages = [...conv.messages];
+              const updated = [...prev];
               const indexToReplace =
                 tempIndex !== -1 ? tempIndex : fallbackTempIndex;
-              updatedMessages[indexToReplace] = newMessage;
-            } else {
-              const existingIndex = conv.messages.findIndex(
-                (msg) => msg.id === newMessage.id
-              );
-              if (existingIndex !== -1) {
-                return conv;
-              } else {
-                updatedMessages = [...conv.messages, newMessage];
-              }
+              updated[indexToReplace] = newMessage;
+              return updated;
             }
 
-            const isNewer =
-              !conv.lastMessageTime ||
-              new Date(newMessage.createdAt) > new Date(conv.lastMessageTime);
+            const existingIndex = prev.findIndex(
+              (msg) => msg.id === newMessage.id
+            );
+            if (existingIndex !== -1) {
+              return prev;
+            }
 
-            return {
-              ...conv,
-              messages: updatedMessages,
-              ...(isNewer && {
-                lastMessage: newMessage.image
-                  ? newMessage.text || "Image"
-                  : newMessage.text,
-                lastMessageTime: newMessage.createdAt,
-                lastMessageSenderId: newMessage.senderId,
-                lastMessageSenderName: newMessage.senderName,
-                lastMessageSenderUsername: newMessage.senderUsername,
-                lastMessageSenderAvatar: newMessage.senderAvatar,
-              }),
-            };
-          })
-        );
-      } else if (data.type === "TYPING") {
-        if (!data.userId || !data.conversationId) return;
+            return [...prev, newMessage];
+          });
 
-        setTypingIndicators((prev) => {
-          const filtered = prev.filter(
-            (indicator) =>
-              !(
-                indicator.userId === data.userId &&
-                indicator.conversationId === data.conversationId
-              )
+          setConversations((prevConversations) =>
+            prevConversations.map((conv) => {
+              if (conv.id !== newMessage.conversationId) return conv;
+
+              const tempIndex = conv.messages.findIndex(
+                (msg) => msg.id === data.tempMessageId
+              );
+
+              const fallbackTempIndex =
+                tempIndex === -1
+                  ? conv.messages.findIndex(
+                      (msg) =>
+                        msg.id.startsWith("temp-") &&
+                        msg.text === newMessage.text &&
+                        msg.senderId === userId
+                    )
+                  : -1;
+
+              let updatedMessages;
+
+              if (tempIndex !== -1 || fallbackTempIndex !== -1) {
+                updatedMessages = [...conv.messages];
+                const indexToReplace =
+                  tempIndex !== -1 ? tempIndex : fallbackTempIndex;
+                updatedMessages[indexToReplace] = newMessage;
+              } else {
+                const existingIndex = conv.messages.findIndex(
+                  (msg) => msg.id === newMessage.id
+                );
+                if (existingIndex !== -1) {
+                  return conv;
+                } else {
+                  updatedMessages = [...conv.messages, newMessage];
+                }
+              }
+
+              const isNewer =
+                !conv.lastMessageTime ||
+                new Date(newMessage.createdAt) > new Date(conv.lastMessageTime);
+
+              return {
+                ...conv,
+                messages: updatedMessages,
+                ...(isNewer && {
+                  lastMessage: newMessage.image
+                    ? newMessage.text || "Image"
+                    : newMessage.text,
+                  lastMessageTime: newMessage.createdAt,
+                  lastMessageSenderId: newMessage.senderId,
+                  lastMessageSenderName: newMessage.senderName,
+                  lastMessageSenderUsername: newMessage.senderUsername,
+                  lastMessageSenderAvatar: newMessage.senderAvatar,
+                }),
+              };
+            })
+          );
+          break;
+        }
+
+        case "TYPING": {
+          if (!data.userId || !data.conversationId) return;
+
+          setTypingIndicators((prev) => {
+            const filtered = prev.filter(
+              (indicator) =>
+                !(
+                  indicator.userId === data.userId &&
+                  indicator.conversationId === data.conversationId
+                )
+            );
+
+            return data.isTyping
+              ? [
+                  ...filtered,
+                  {
+                    userId: data.userId,
+                    conversationId: data.conversationId,
+                    isTyping: true,
+                    lastTypingTime: new Date(),
+                  },
+                ]
+              : filtered;
+          });
+
+          if (data.isTyping && data.userId !== userId) {
+            const key = `${data.userId}-${data.conversationId}`;
+
+            if (typingTimeoutRef.current[key]) {
+              clearTimeout(typingTimeoutRef.current[key]);
+            }
+
+            typingTimeoutRef.current[key] = setTimeout(() => {
+              setTypingIndicators((prev) =>
+                prev.filter(
+                  (indicator) =>
+                    !(
+                      indicator.userId === data.userId &&
+                      indicator.conversationId === data.conversationId
+                    )
+                )
+              );
+            }, 5000);
+          }
+          break;
+        }
+
+        case "ONLINE_STATUS": {
+          console.log("Received online status:", data);
+          const receivedUserId = data.userId as string;
+          const isOnline = !!data.isOnline;
+
+          console.log(
+            `Online status received: User ${receivedUserId} is ${
+              isOnline ? "online" : "offline"
+            }`
           );
 
-          return data.isTyping
-            ? [
-                ...filtered,
-                {
-                  userId: data.userId,
-                  conversationId: data.conversationId,
-                  isTyping: true,
-                  lastTypingTime: new Date(),
-                },
-              ]
-            : filtered;
-        });
-
-        if (data.isTyping && data.userId !== userId) {
-          const key = `${data.userId}-${data.conversationId}`;
-
-          if (typingTimeoutRef.current[key]) {
-            clearTimeout(typingTimeoutRef.current[key]);
-          }
-
-          typingTimeoutRef.current[key] = setTimeout(() => {
-            setTypingIndicators((prev) =>
-              prev.filter(
-                (indicator) =>
-                  !(
-                    indicator.userId === data.userId &&
-                    indicator.conversationId === data.conversationId
-                  )
-              )
-            );
-          }, 5000);
-        }
-      } else if (data.type === "ONLINE_STATUS") {
-        console.log("Received online status:", data);
-        const receivedUserId = data.userId as string;
-        const isOnline = !!data.isOnline;
-
-        console.log(
-          `Online status received: User ${receivedUserId} is ${
-            isOnline ? "online" : "offline"
-          }`
-        );
-
-        setOnlineUsers((prev) => {
-          const newSet = new Set(prev);
-
           if (isOnline) {
-            if (!newSet.has(receivedUserId)) {
-              console.log(`Adding ${receivedUserId} to online users`);
-              newSet.add(receivedUserId);
-            }
+            setOnlineUsers((prev) => {
+              if (prev.has(receivedUserId)) return prev;
+              const updated = new Set(prev);
+              updated.add(receivedUserId);
+              return updated;
+            });
           } else {
-            if (newSet.has(receivedUserId)) {
-              console.log(`Removing ${receivedUserId} from online users`);
-              newSet.delete(receivedUserId);
-            }
+            setOnlineUsers((prev) => {
+              if (!prev.has(receivedUserId)) return prev;
+              const updated = new Set(prev);
+              updated.delete(receivedUserId);
+              return updated;
+            });
           }
-
-          return newSet;
-        });
+          break;
+        }
       }
     },
     [userId]
@@ -429,59 +437,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (!userId || !isConnected) return;
-
-    wsSendMessage({
-      type: "ONLINE_STATUS",
-      userId,
-      isOnline: true,
-      timestamp: new Date().toISOString(),
-    });
-
-    onlineStatusIntervalRef.current = setInterval(() => {
-      if (isConnected) {
-        wsSendMessage({
-          type: "ONLINE_STATUS",
-          userId,
-          isOnline: true,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    }, 30000);
-
-    return () => {
-      if (onlineStatusIntervalRef.current) {
-        clearInterval(onlineStatusIntervalRef.current);
-      }
-
-      if (isConnected && userId) {
-        wsSendMessage({
-          type: "ONLINE_STATUS",
-          userId,
-          isOnline: false,
-          timestamp: new Date().toISOString(),
-        });
-      }
-    };
-  }, [userId, isConnected, wsSendMessage]);
-
-  useEffect(() => {
-    if (!isConnected && onlineStatusIntervalRef.current) {
-      clearInterval(onlineStatusIntervalRef.current);
-      onlineStatusIntervalRef.current = null;
-    } else if (isConnected && userId && !onlineStatusIntervalRef.current) {
-      onlineStatusIntervalRef.current = setInterval(() => {
-        wsSendMessage({
-          type: "ONLINE_STATUS",
-          userId,
-          isOnline: true,
-          timestamp: new Date().toISOString(),
-        });
-      }, 3000);
-    }
-  }, [isConnected, userId, wsSendMessage]);
-
   const setTyping = useCallback(
     (conversationId: string, isTyping: boolean) => {
       if (!userId) return;
@@ -568,16 +523,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [onlineUsers]
   );
 
-  const refreshOnlineStatus = useCallback(() => {
-    if (!userId || !isConnected) return;
-
-    wsSendMessage({
-      type: "REQUEST_ONLINE_STATUS",
-      userId,
-      timestamp: new Date().toISOString(),
-    });
-  }, [userId, isConnected, wsSendMessage]);
-
   const reloadChats = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -604,7 +549,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         typingIndicators,
         onlineUsers,
         isUserOnline,
-        refreshOnlineStatus,
         fetchUser,
         users: usersRef.current,
         getUserFromId,

@@ -33,6 +33,7 @@ export interface WebSocketMessage {
   [key: string]: any;
 }
 
+
 export interface MessagePayload extends WebSocketMessage {
   conversationId: string;
   text: string;
@@ -50,6 +51,11 @@ export interface CompleteMessage extends WebSocketMessage {
   createdAt: Date;
 }
 
+export interface IncomingChatMessage extends WebSocketMessage {
+  id: string;
+  text: string;
+
+}
 export interface TypingPayload extends WebSocketMessage {
   conversationId: string;
   isTyping: boolean;
@@ -76,7 +82,8 @@ export interface ErrorPayload extends WebSocketMessage {
   timestamp: Date;
 }
 
-export interface ConnectionEstablishedPayload extends WebSocketMessage {
+export interface ConnectionAck extends WebSocketMessage {
+  type: "CONNECTION_ESTABLISHED";
   userId: string;
   timestamp: Date;
 }
@@ -95,3 +102,13 @@ export enum MessageStatus {
   READ = "READ",
   FAILED = "FAILED",
 }
+
+type IncomingMessageTypes = "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS";
+
+export interface IncomingMessage{
+  type: IncomingMessageTypes;
+  conversationId: string;
+  text: string;
+  [key: string]: any;
+}
+

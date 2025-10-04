@@ -23,7 +23,7 @@ export const ChatListItem = ({
   const { users, fetchUser, typingIndicators } = useChat();
 
   useEffect(() => {
-    if (!chat.isGroup) {
+    if (!chat.isGroup && chat.participants) {
       const otherParticipant = chat.participants.find(
         (id: string) => id !== userId
       );
@@ -43,7 +43,7 @@ export const ChatListItem = ({
   }, [chat]);
 
   const isGroupChat = (chat: any) => {
-    return chat.participants.length > 2;
+    return chat.participants && chat.participants.length > 2;
   };
 
   const { onlineUsers } = useChat();
@@ -53,6 +53,8 @@ export const ChatListItem = ({
   };
 
   const getChatOnlineStatus = (chat: any) => {
+    if (!chat.participants) return false;
+
     if (!chat.isGroup && chat.participants.length === 2 && userId) {
       const otherParticipant = chat.participants.find(
         (id: string) => id !== userId
@@ -67,7 +69,12 @@ export const ChatListItem = ({
   };
 
   const getChatDisplayName = (chat: any) => {
-    if (!chat.isGroup && chat.participants.length === 2 && userId) {
+    if (
+      !chat.isGroup &&
+      chat.participants &&
+      chat.participants.length === 2 &&
+      userId
+    ) {
       const otherParticipant = chat.participants.find(
         (id: string) => id !== userId
       );
@@ -191,7 +198,7 @@ export const ChatListItem = ({
           <div className="flex justify-between items-center">
             <div className="font-medium text-foreground flex items-center gap-1 truncate">
               <span className="truncate">{getChatDisplayName(chat)}</span>
-              {isGroupChat(chat) && (
+              {isGroupChat(chat) && chat.participants && (
                 <Badge variant="secondary" className="text-xs ml-1 py-0 h-5">
                   {chat.participants.length}
                 </Badge>

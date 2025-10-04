@@ -117,7 +117,7 @@ export function ChatHeader({
   };
 
   return (
-    <div className="p-3 border-b border-border flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10">
+    <div className="p-[0.88rem] border-b border-border flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm z-10">
       <div className="flex items-center gap-3">
         {!isMobileSidebarOpen && (
           <Button

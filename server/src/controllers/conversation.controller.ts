@@ -19,11 +19,13 @@ export const getConversations = expressAsyncHandler(
     //@ts-ignore
     const userId = req.auth.userId;
     const cacheKey = Cache.getConvKey(userId);
-    const cached = await Cache.get(cacheKey);
+    const cachedData = await Cache.get(cacheKey);
+    console.log("Cached data:", cachedData, cachedData?.length);
 
-    if (cached) {
+    // Check if we have cached data
+    if (cachedData.length > 0) {
       console.log("Returning conversations from cache");
-      res.status(200).json(cached);
+      res.status(200).json(cachedData);
       return;
     }
 
@@ -37,6 +39,8 @@ export const getConversations = expressAsyncHandler(
         messages: true,
       },
     });
+
+    console.log("Fetched conversations from DB:", convs.length, convs);
 
     for (const conv of convs) {
       if (conv.isGroup === false) {
@@ -95,7 +99,9 @@ export const getConversations = expressAsyncHandler(
       }
     }
 
+    console.log("Processed conversations:", convs);
     await Cache.set(cacheKey, convs);
+
     res.status(200).json(convs);
     return;
   }

@@ -110,7 +110,6 @@ export const useWebSocket = ({ onMessage }: UseWebSocketOptions) => {
     (message: WebSocketMessage): boolean => {
       if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
         messageQueue.current.push(message);
-
         if (!isConnecting.current) {
           connect();
         }

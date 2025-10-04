@@ -1,16 +1,16 @@
-import { redisClient } from "./reddisClient";
+import { redisClient } from "./redisClient";
 
 export class Cache {
-  static readonly CONV_TTL = 10;
-  static readonly MSG_TTL = 10;
+  static readonly CONV_TTL = 100;
+  static readonly MSG_TTL = 100;
 
   static async get(key: string) {
     try {
       const data = await redisClient.get(key);
-      return data ? JSON.parse(data) : null;
+      return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error);
-      return null;
+      return [];
     }
   }
 
@@ -40,8 +40,16 @@ export class Cache {
     }
   }
 
+  static getUserKey(userId: string) {
+    return `user_${userId}`;
+  }
+  
   static getConvKey(userId: string) {
-    return `user_conversations_${userId}`;
+    return `user's_conversations_${userId}`;
+  }
+
+  static getConvIdKey(userId: string) {
+    return `user_conversation_ids_${userId}`;
   }
 
   static getMsgKey(conversationId: string) {

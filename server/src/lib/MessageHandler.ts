@@ -1,0 +1,67 @@
+import { prisma } from "./prisma";
+import { User } from "./User";
+import { broadcastInConv, Users } from "./websocket";
+import { WebSocketMessage, IncomingMessage } from "./websocket.types";
+
+export class MessageHandler {
+  static async handleMessage(sender: User, message: any) {
+    const data = JSON.parse(message.toString()) as WebSocketMessage;
+    // console.log("Received data:", data);
+    switch (data.type) {
+      case "MESSAGE":
+        this.handleChatMessage(sender, data as IncomingMessage);
+        break;
+      case "TYPING":
+        this.handleTypingIndicator(data);
+        break;
+      case "READ_RECEIPT":
+        this.handleReadReceipt(data);
+        break;
+      case "REQUEST_ONLINE_STATUS":
+        this.handleOnlineStatusRequest(data);
+        break;
+      default:
+        console.warn(`Unknown message type: ${data.type}`);
+    }
+  }
+
+  static async handleChatMessage(sender: User, payload: IncomingMessage) {
+    const { conversationId, text, image } = payload;
+    if (!conversationId) {
+      console.error("conversationId is required for chat message");
+      return;
+    }
+
+    let msg;
+    msg = await prisma.message.create({
+      data: {
+        text: text || "",
+        image,
+        senderId: sender.id,
+        senderName: sender.firstName + " " + sender.lastName,
+        senderUsername: sender.username,
+        senderAvatar: sender.imageUrl,
+        conversationId,
+      },
+    });
+    msg = { type: "MESSAGE", ...msg };
+    await broadcastInConv(conversationId, msg);
+}
+
+  static handleTypingIndicator(message: any) {
+    console.log("Handling typing indicator:", message);
+    broadcastInConv(message.conversationId, message);
+  }
+
+  static handleReadReceipt(message: any) {
+    console.log("Handling read receipt:", message);
+  }
+
+  static handleOnlineStatusRequest(message: any) {
+    console.log("Handling online status request:", message);
+  }
+
+  static handleError(error: any) {
+    console.error("Handling error:", error);
+  }
+}

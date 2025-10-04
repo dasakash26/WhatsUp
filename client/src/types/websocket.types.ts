@@ -154,3 +154,14 @@ export interface ConversationAction {
     userId?: string;
   };
 }
+
+export interface OutGoingMessage{
+  type: "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS";
+  [key: string]: any;
+}
+
+export interface OutGoingChatMessage extends OutGoingMessage{
+  conversationId: string;
+  text: string;
+  image?: string;
+}

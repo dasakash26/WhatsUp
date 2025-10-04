@@ -68,12 +68,14 @@ export function Sidebar({
     return () => window.removeEventListener("resize", handleResize);
   }, [isMobileOpen]);
 
-  // Filter chats based on search term
-  const filteredChats = searchTerm
-    ? conversations.filter((chat) =>
-        chat.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : conversations;
+  // Filter chats based on search term and remove any invalid chats
+  const filteredChats = (
+    searchTerm
+      ? conversations.filter((chat) =>
+          chat?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : conversations
+  ).filter((chat) => chat && chat.id); // Ensure chat has valid id
 
   const handleChatSelection = (chatId: string) => {
     setCurrentConversationId(chatId);
@@ -120,21 +122,24 @@ export function Sidebar({
         <SearchBar searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
         <div className="flex-1 flex flex-col min-h-0">
-          <ScrollArea className="h-full border">
+          <ScrollArea className="h-full">
             <div className="space-y-1 p-2">
               {isLoading ? (
                 Array(5)
                   .fill(0)
                   .map((_, index) => (
-                    <Card key={index} className="p-0 overflow-hidden shadow-sm">
+                    <Card
+                      key={`skeleton-${index}`}
+                      className="p-0 overflow-hidden shadow-sm"
+                    >
                       <ChatSkeleton />
                     </Card>
                   ))
               ) : filteredChats.length > 0 ? (
                 // Chat list
-                filteredChats.map((chat) => (
+                filteredChats.map((chat, index) => (
                   <ChatListItem
-                    key={chat.id}
+                    key={chat?.id || `chat-${index}`}
                     chat={chat}
                     isActive={currentConversationId === chat.id}
                     userId={userId ?? null}
