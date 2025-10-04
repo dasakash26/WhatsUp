@@ -1,8 +1,8 @@
 import { redisClient } from "./reddisClient";
 
 export class Cache {
-  static readonly CONV_TTL = 300;
-  static readonly MSG_TTL = 600;
+  static readonly CONV_TTL = 10;
+  static readonly MSG_TTL = 10;
 
   static async get(key: string) {
     try {

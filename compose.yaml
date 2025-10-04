@@ -1,0 +1,77 @@
+services:
+  pg_db:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+  
+  prisma-studio:
+    image: node:lts-alpine3.17
+    working_dir: /app
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    command: sh -c "npx prisma studio --hostname 0.0.0.0 --port 5555" 
+    ports:
+      - "5555:5555"
+    environment:
+      - DATABASE_URL=postgresql://postgres:1234@pg_db:5432/postgres?schema=public
+    depends_on:
+      - pg_db
+    networks:
+      - app-net
+  redis:
+    image: redis:7.0-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-net
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    env_file:
+      - ./server/.env
+    depends_on:
+      - pg_db
+      - redis
+    networks:
+      - app-net
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    env_file:
+      - ./client/.env
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - server
+    networks:
+      - app-net
+
+volumes:
+  db_data:
+
+networks:
+  app-net:
+    driver: bridge

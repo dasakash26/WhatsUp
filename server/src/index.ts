@@ -19,6 +19,8 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "http://client:5173",
+      "http://client:3001",
       "https://whatsup-chat.onrender.com",
       "http://localhost:4173",
       "ws://whatsup-chat.onrender.com",
@@ -30,6 +32,12 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use((req, res, next) => {
+  // Log the request path and method
+  console.log(`> ${req.method} ${req.path}`);
+  next();
+});
 
 app.use("/api/conversation", requireAuth(), conversationRoutes);
 app.use("/api/message", requireAuth(), messageRoutes);
