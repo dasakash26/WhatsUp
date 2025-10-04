@@ -1,5 +1,4 @@
 import multer from "multer";
-import path, { dirname } from "path";
 import cloudinary from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 

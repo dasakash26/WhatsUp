@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { User } from "./User";
-import { broadcastInConv, Users } from "./websocket";
+import { broadcastInConv } from "./websocket";
 import { WebSocketMessage, IncomingMessage } from "./websocket.types";
 
 export class MessageHandler {

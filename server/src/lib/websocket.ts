@@ -3,7 +3,7 @@ import { Server } from "http";
 import { Request } from "express";
 import { User } from "./User";
 import jwt from "jsonwebtoken";
-import { CLERK_PEM_PUBLIC_KEY } from "@/utils/secrets";
+import { CLERK_PEM_PUBLIC_KEY } from "../utils/secrets";
 import { UserJwtPayload } from "./websocket.types";
 import { clerkClient } from "@clerk/express";
 import { Cache } from "./cacheManager";

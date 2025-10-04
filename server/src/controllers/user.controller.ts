@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/express";
 import expressAsyncHandler from "express-async-handler";
-import { Cache } from "@/lib/cacheManager";
+import { Cache } from "../lib/cacheManager";
 
 export const getUserFromId = expressAsyncHandler(async (req, res) => {
   const { userId } = req.params;
