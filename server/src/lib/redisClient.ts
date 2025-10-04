@@ -8,8 +8,6 @@ class RedisClient {
     private constructor() {
         this.client = createClient({
             url: REDIS_URL,
-            username: "default",
-            password: REDIS_PASSWORD,
         });
 
         this.client.on("error", (err) => console.log("Redis Client Error", err));
