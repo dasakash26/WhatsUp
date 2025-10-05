@@ -1,7 +1,7 @@
 # WhatsUp
 
 <div align="center">
-  <img src="client/public/logo.webp" alt="WhatsUp Logo" width="100" height="100" />
+  <img src="client/public/logo.png" alt="WhatsUp Logo" width="100" height="100" />
   <h3>A modern real-time messaging application</h3>
   
   <p>
