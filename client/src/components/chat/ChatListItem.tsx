@@ -148,9 +148,10 @@ export const ChatListItem = ({
     if (!typingUser) return null;
 
     const typingUserData = users.find((u) => u.id === typingUser.userId);
+    console.log("Typing user data:", typingUserData);
     if (typingUserData) {
       return `${
-        typingUserData.fullName?.split(" ")[0] || "Someone"
+        typingUserData.username || "Someone"
       } is typing...`;
     }
 
