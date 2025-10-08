@@ -157,9 +157,9 @@ export function MessageBubble({
           <div className="flex items-center justify-end gap-2 mt-2 text-xs opacity-75 ">
             <span>{formatMessageTime(message.createdAt)}</span>
             <span>
-              {message.status === "SENT" && "✓"}
-              {message.status === "DELIVERED" && "✓✓"}
-              {message.status === "READ" && (
+              {(message.status === "SENT" || message.status === "sent") && "✓"}
+              {(message.status === "DELIVERED" || message.status === "delivered") && "✓✓"}
+              {(message.status === "READ" || message.status === "read") && (
                 <span className="text-blue-200">✓✓</span>
               )}
             </span>
