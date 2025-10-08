@@ -53,8 +53,35 @@ export class MessageHandler {
     broadcastInConv(message.conversationId, message);
   }
 
-  static handleReadReceipt(message: any) {
+  static async handleReadReceipt(message: any) {
     console.log("Handling read receipt:", message);
+    const { conversationId, messageId, userId } = message;
+    
+    if (!conversationId || !messageId || !userId) {
+      console.error("Missing required fields for read receipt");
+      return;
+    }
+
+    try {
+      // Update the message status to READ
+      const updatedMessage = await prisma.message.update({
+        where: { id: messageId },
+        data: { status: "READ" },
+      });
+
+      // Broadcast the read receipt to all participants in the conversation
+      const readReceiptPayload = {
+        type: "READ_RECEIPT",
+        conversationId,
+        messageId,
+        userId,
+        timestamp: new Date(),
+      };
+      
+      await broadcastInConv(conversationId, readReceiptPayload);
+    } catch (error) {
+      console.error("Error handling read receipt:", error);
+    }
   }
 
   static handleOnlineStatusRequest(message: any) {

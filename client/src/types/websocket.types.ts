@@ -122,6 +122,7 @@ export type Conversation = {
 export interface ChatContextType {
   messages: Message[];
   sendMessage: (conversationId: string, text: string, Image?: File) => void;
+  sendReadReceipt: (conversationId: string, messageId: string) => void;
   isConnected: boolean;
   connectionError: string | null;
   currentConversationId: string | null;

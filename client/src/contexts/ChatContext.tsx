@@ -39,6 +39,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const { userId, getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const wsSendMessageRef = useRef<((message: WebSocketMessage) => boolean) | null>(null);
 
   useEffect(() => {
     console.log("Typing Indicators:", typingIndicators);
@@ -199,6 +200,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
               };
             })
           );
+
+          // Send read receipt if the message is from another user and the conversation is currently open
+          if (
+            newMessage.senderId !== userId &&
+            newMessage.conversationId === currentConversationId &&
+            wsSendMessageRef.current
+          ) {
+            // Use setTimeout to ensure the message is processed before sending read receipt
+            setTimeout(() => {
+              wsSendMessageRef.current?.({
+                type: "READ_RECEIPT",
+                conversationId: newMessage.conversationId,
+                messageId: newMessage.id,
+                userId: userId,
+                timestamp: new Date().toISOString(),
+              });
+            }, 100);
+          }
           break;
         }
 
@@ -277,9 +296,34 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           break;
         }
+
+        case "READ_RECEIPT": {
+          console.log("Received read receipt:", data);
+          const { messageId } = data;
+
+          if (!messageId) return;
+
+          // Update the message status in the messages array
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === messageId ? { ...msg, status: "read" } : msg
+            )
+          );
+
+          // Update the message status in conversations
+          setConversations((prevConversations) =>
+            prevConversations.map((conv) => ({
+              ...conv,
+              messages: conv.messages.map((msg) =>
+                msg.id === messageId ? { ...msg, status: "read" } : msg
+              ),
+            }))
+          );
+          break;
+        }
       }
     },
-    [userId]
+    [userId, currentConversationId]
   );
 
   const {
@@ -289,6 +333,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   } = useWebSocket({
     onMessage: handleWebSocketMessage,
   });
+
+  // Update the ref whenever wsSendMessage changes
+  useEffect(() => {
+    wsSendMessageRef.current = wsSendMessage;
+  }, [wsSendMessage]);
 
   useEffect(() => {
     if (!userId) return;
@@ -356,11 +405,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       if (conversation) {
         setMessages(conversation.messages);
+        
+        // Send read receipts for messages from other users that are not already read
+        if (userId && wsSendMessageRef.current) {
+          conversation.messages.forEach((msg) => {
+            if (msg.senderId !== userId && msg.status !== "read") {
+              wsSendMessageRef.current?.({
+                type: "READ_RECEIPT",
+                conversationId: currentConversationId,
+                messageId: msg.id as string,
+                userId,
+                timestamp: new Date().toISOString(),
+              });
+            }
+          });
+        }
       }
     } else {
       setMessages([]);
     }
-  }, [currentConversationId, conversations]);
+  }, [currentConversationId, conversations, userId]);
 
   useEffect(() => {
     const savedConversationId = localStorage.getItem("lastConversationId");
@@ -518,6 +582,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [setTyping, userId, wsSendMessage, getToken]
   );
 
+  const sendReadReceipt = useCallback(
+    (conversationId: string, messageId: string) => {
+      if (!userId) return;
+
+      wsSendMessage({
+        type: "READ_RECEIPT",
+        conversationId,
+        messageId,
+        userId,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    [wsSendMessage, userId]
+  );
+
   const isUserOnline = useCallback(
     (userId: string) => onlineUsers.has(userId),
     [onlineUsers]
@@ -538,6 +617,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         messages,
         sendMessage,
+        sendReadReceipt,
         isConnected,
         connectionError,
         currentConversationId,
