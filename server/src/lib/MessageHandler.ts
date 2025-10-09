@@ -20,6 +20,9 @@ export class MessageHandler {
       case "REQUEST_ONLINE_STATUS":
         this.handleOnlineStatusRequest(data);
         break;
+      case "VIDEO_CALL_START":
+        this.handleVideoCallStart(sender, data);
+        break;
       default:
         console.warn(`Unknown message type: ${data.type}`);
     }
@@ -101,6 +104,40 @@ export class MessageHandler {
 
   static handleOnlineStatusRequest(message: any) {
     console.log("Handling online status request:", message);
+  }
+
+  static async handleVideoCallStart(sender: User, message: any) {
+    console.log("Handling video call start:", message);
+    const { conversationId } = message;
+    
+    if (!conversationId) {
+      console.error("conversationId is required for video call start");
+      return;
+    }
+
+    try {
+      // Create system message
+      const systemMessage = await prisma.message.create({
+        data: {
+          text: `${sender.firstName} ${sender.lastName} started a video call`,
+          senderId: "system",
+          senderName: "System",
+          senderUsername: "System",
+          senderAvatar:
+            "https://png.pngtree.com/png-vector/20201224/ourmid/pngtree-future-intelligent-technology-robot-ai-png-image_2588803.jpg",
+          conversationId,
+        },
+      });
+
+      // Broadcast to all participants in the conversation
+      const messagePayload = { type: "MESSAGE", ...systemMessage };
+      await broadcastInConv(conversationId, messagePayload);
+      
+      // Invalidate cache for this conversation
+      Cache.del(Cache.getConvKey(conversationId));
+    } catch (error) {
+      console.error("Error handling video call start:", error);
+    }
   }
 
   static handleError(error: any) {

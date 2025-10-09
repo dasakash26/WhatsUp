@@ -634,35 +634,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [wsSendMessage, userId]
   );
 
-  const addSystemMessage = useCallback(
-    (conversationId: string, text: string) => {
-      const systemMessage: Message = {
-        id: `system-${Date.now()}`,
-        text,
-        senderId: "system",
-        senderName: "System",
-        senderUsername: "System",
-        senderAvatar: null,
+  const notifyVideoCallStart = useCallback(
+    (conversationId: string) => {
+      if (!userId) return;
+
+      wsSendMessage({
+        type: "VIDEO_CALL_START",
         conversationId,
-        createdAt: new Date(),
-        type: "MESSAGE",
-        status: "SENT",
-      };
-
-      setMessages((prev) => [...prev, systemMessage]);
-
-      setConversations((prevConversations) =>
-        prevConversations.map((conv) => {
-          if (conv.id !== conversationId) return conv;
-
-          return {
-            ...conv,
-            messages: [...conv.messages, systemMessage],
-          };
-        })
-      );
+        userId,
+        timestamp: new Date().toISOString(),
+      });
     },
-    []
+    [wsSendMessage, userId]
   );
 
   const isUserOnline = useCallback(
@@ -686,7 +669,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         messages,
         sendMessage,
         sendReadReceipt,
-        addSystemMessage,
+        notifyVideoCallStart,
         isConnected,
         connectionError,
         currentConversationId,

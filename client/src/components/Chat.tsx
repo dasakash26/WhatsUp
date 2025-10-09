@@ -33,6 +33,7 @@ export function Chat({
     isConnected,
     connectionError,
     onlineUsers,
+    notifyVideoCallStart,
   } = useChat();
 
   const { userId } = useAuth();
@@ -94,6 +95,13 @@ export function Chat({
       setInputMessage("");
       inputRef.current?.focus();
     }
+  };
+
+  const handleStartVideoCall = () => {
+    if (currentConversation?.id) {
+      notifyVideoCallStart(currentConversation.id);
+    }
+    setIsCallActive(true);
   };
 
   useEffect(() => {
