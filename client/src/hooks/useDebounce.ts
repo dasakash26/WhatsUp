@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 export function useDebounce(
   callback: () => void,
   delay: number,
-  dependencies: any[]
+  dependencies: unknown[]
 ): void {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -19,5 +19,6 @@ export function useDebounce(
         clearTimeout(timeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...dependencies, callback, delay]);
 }

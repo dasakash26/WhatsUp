@@ -5,9 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
 import { useChat } from "@/contexts/ChatContext";
 import { useEffect, useState } from "react";
+import { Conversation, User } from "@/types/websocket.types";
 
 interface ChatListItemProps {
-  chat: any;
+  chat: Conversation;
   isActive: boolean;
   userId: string | null;
   onClick: () => void;
@@ -19,7 +20,7 @@ export const ChatListItem = ({
   userId,
   onClick,
 }: ChatListItemProps) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const { users, fetchUser, typingIndicators } = useChat();
 
   useEffect(() => {
@@ -40,9 +41,9 @@ export const ChatListItem = ({
         }
       }
     }
-  }, [chat]);
+  }, [chat, fetchUser, userId, users]);
 
-  const isGroupChat = (chat: any) => {
+  const isGroupChat = (chat: Conversation) => {
     return chat.participants && chat.participants.length > 2;
   };
 
@@ -52,7 +53,7 @@ export const ChatListItem = ({
     return onlineUsers.has(userId);
   };
 
-  const getChatOnlineStatus = (chat: any) => {
+  const getChatOnlineStatus = (chat: Conversation) => {
     if (!chat.participants) return false;
 
     if (!chat.isGroup && chat.participants.length === 2 && userId) {
@@ -68,7 +69,7 @@ export const ChatListItem = ({
     return false;
   };
 
-  const getChatDisplayName = (chat: any) => {
+  const getChatDisplayName = (chat: Conversation) => {
     if (
       !chat.isGroup &&
       chat.participants &&
@@ -88,7 +89,7 @@ export const ChatListItem = ({
     return chat.name;
   };
 
-  const getLastMessagePrefix = (chat: any) => {
+  const getLastMessagePrefix = (chat: Conversation) => {
     if (!chat.lastMessage) return "";
 
     const isCurrentUserLastSender =

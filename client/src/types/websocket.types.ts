@@ -5,7 +5,7 @@ export type UserJwtPayload = {
   preferred_username?: string;
   image_url?: string;
   picture?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 export interface User {
@@ -14,7 +14,7 @@ export interface User {
   lastName?: string;
   username?: string | null;
   imageUrl?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type WebSocketMessageType =
@@ -31,7 +31,7 @@ export type WebSocketMessageType =
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface MessagePayload extends WebSocketMessage {
@@ -119,7 +119,24 @@ export type Conversation = {
   messages: Message[];
   typingUsers?: string[];
   isOnline?: boolean;
+  isGroup?: boolean;
 };
+
+// Type for conversation data from API (before processing)
+export interface ApiConversationData {
+  id: string;
+  name: string;
+  participants: string[];
+  messages?: Message[];
+  online?: boolean;
+  unreadCount?: number;
+  lastMessage?: string;
+  lastMessageSenderName?: string;
+  lastMessageSenderUsername?: string;
+  lastMessageSenderAvatar?: string | null;
+  lastMessageTime?: string | Date;
+  isGroup?: boolean;
+}
 
 export interface ChatContextType {
   messages: Message[];
@@ -161,7 +178,7 @@ export interface ConversationAction {
 
 export interface OutGoingMessage{
   type: "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS" | "VIDEO_CALL_START";
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface OutGoingChatMessage extends OutGoingMessage{

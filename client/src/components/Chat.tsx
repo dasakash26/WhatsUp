@@ -28,7 +28,6 @@ export function Chat({
     conversations,
     messages,
     sendMessage,
-    addSystemMessage,
     currentConversationId,
     isConnected,
     connectionError,
@@ -66,8 +65,8 @@ export function Chat({
 
   const handleStartVideoCall = () => {
     if (currentConversation?.id) {
+      notifyVideoCallStart(currentConversation.id);
       setIsCallActive(true);
-      addSystemMessage(currentConversation.id, "📹 Video call started");
       setCallAlertMessage("Video call started");
       setShowCallAlert(true);
       setTimeout(() => setShowCallAlert(false), 3000);
@@ -77,7 +76,6 @@ export function Chat({
   const handleEndVideoCall = () => {
     if (currentConversation?.id) {
       setIsCallActive(false);
-      addSystemMessage(currentConversation.id, "📹 Video call ended");
       setCallAlertMessage("Video call ended");
       setShowCallAlert(true);
       setTimeout(() => setShowCallAlert(false), 3000);
@@ -95,13 +93,6 @@ export function Chat({
       setInputMessage("");
       inputRef.current?.focus();
     }
-  };
-
-  const handleStartVideoCall = () => {
-    if (currentConversation?.id) {
-      notifyVideoCallStart(currentConversation.id);
-    }
-    setIsCallActive(true);
   };
 
   useEffect(() => {
@@ -147,8 +138,8 @@ export function Chat({
   };
 
   const formattedMessages = conversationMessages.map((msg) => {
-    const validStatus = ["SENT", "DELIVERED", "READ", undefined];
-    const normalizedStatus = validStatus.includes(msg.status as any)
+    const validStatus: Array<"SENT" | "DELIVERED" | "READ" | undefined> = ["SENT", "DELIVERED", "READ", undefined];
+    const normalizedStatus = validStatus.includes(msg.status as "SENT" | "DELIVERED" | "READ" | undefined)
       ? (msg.status as "SENT" | "DELIVERED" | "READ" | undefined)
       : "SENT";
 
