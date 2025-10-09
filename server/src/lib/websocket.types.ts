@@ -26,7 +26,8 @@ export type WebSocketMessageType =
   | "ERROR"
   | "CONNECTION_ESTABLISHED"
   | "ONLINE_STATUS"
-  | "REQUEST_ONLINE_STATUS";
+  | "REQUEST_ONLINE_STATUS"
+  | "VIDEO_CALL_START";
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
@@ -104,7 +105,7 @@ export enum MessageStatus {
   FAILED = "FAILED",
 }
 
-type IncomingMessageTypes = "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS";
+type IncomingMessageTypes = "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS" | "VIDEO_CALL_START";
 
 export interface IncomingMessage{
   type: IncomingMessageTypes;
