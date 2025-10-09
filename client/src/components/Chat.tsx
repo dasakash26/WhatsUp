@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import { TypingIndicator } from "./Messages/TypingIndicator";
 import VideoCall from "./videoCall/video";
 import { Button } from "@/components/ui/button";
-import { X, MessageCircle, ChevronDown } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { X, MessageCircle, ChevronDown, Video } from "lucide-react";
 
 interface ChatProps extends React.HTMLAttributes<HTMLDivElement> {
   onMobileMenuClick?: () => void;
@@ -27,6 +28,7 @@ export function Chat({
     conversations,
     messages,
     sendMessage,
+    addSystemMessage,
     currentConversationId,
     isConnected,
     connectionError,
@@ -38,6 +40,8 @@ export function Chat({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isCallActive, setIsCallActive] = useState(false);
   const [isChatOverlayOpen, setIsChatOverlayOpen] = useState(false);
+  const [showCallAlert, setShowCallAlert] = useState(false);
+  const [callAlertMessage, setCallAlertMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -56,6 +60,26 @@ export function Chat({
     } catch (error) {
       console.error("Error formatting timestamp:", error);
       return "";
+    }
+  };
+
+  const handleStartVideoCall = () => {
+    if (currentConversation?.id) {
+      setIsCallActive(true);
+      addSystemMessage(currentConversation.id, "📹 Video call started");
+      setCallAlertMessage("Video call started");
+      setShowCallAlert(true);
+      setTimeout(() => setShowCallAlert(false), 3000);
+    }
+  };
+
+  const handleEndVideoCall = () => {
+    if (currentConversation?.id) {
+      setIsCallActive(false);
+      addSystemMessage(currentConversation.id, "📹 Video call ended");
+      setCallAlertMessage("Video call ended");
+      setShowCallAlert(true);
+      setTimeout(() => setShowCallAlert(false), 3000);
     }
   };
 
@@ -141,11 +165,23 @@ export function Chat({
       )}
       {...props}
     >
+      {/* Global Alert */}
+      {showCallAlert && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-md px-4">
+          <Alert variant="info" className="shadow-lg border-2">
+            <Video className="h-4 w-4" />
+            <AlertDescription className="font-medium">
+              {callAlertMessage}
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+
       <ChatHeader
         chat={chatForHeader}
         onMobileMenuClick={onMobileMenuClick}
         isMobileSidebarOpen={isMobileSidebarOpen}
-        onStartVideoCall={() => setIsCallActive(true)}
+        onStartVideoCall={handleStartVideoCall}
       />
 
       {connectionError && (
@@ -180,7 +216,7 @@ export function Chat({
                 <MessageCircle className="h-5 w-5" />
               </Button>
               <Button
-                onClick={() => setIsCallActive(false)}
+                onClick={handleEndVideoCall}
                 size="icon"
                 className="h-10 w-10 rounded-full bg-red-500/90 backdrop-blur-md border-0 hover:bg-red-600 text-white"
               >

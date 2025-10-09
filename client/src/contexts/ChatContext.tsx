@@ -634,6 +634,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [wsSendMessage, userId]
   );
 
+  const addSystemMessage = useCallback(
+    (conversationId: string, text: string) => {
+      const systemMessage: Message = {
+        id: `system-${Date.now()}`,
+        text,
+        senderId: "system",
+        senderName: "System",
+        senderUsername: "System",
+        senderAvatar: null,
+        conversationId,
+        createdAt: new Date(),
+        type: "MESSAGE",
+        status: "SENT",
+      };
+
+      setMessages((prev) => [...prev, systemMessage]);
+
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) => {
+          if (conv.id !== conversationId) return conv;
+
+          return {
+            ...conv,
+            messages: [...conv.messages, systemMessage],
+          };
+        })
+      );
+    },
+    []
+  );
+
   const isUserOnline = useCallback(
     (userId: string) => onlineUsers.has(userId),
     [onlineUsers]
@@ -655,6 +686,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         messages,
         sendMessage,
         sendReadReceipt,
+        addSystemMessage,
         isConnected,
         connectionError,
         currentConversationId,

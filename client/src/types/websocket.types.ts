@@ -124,6 +124,7 @@ export interface ChatContextType {
   messages: Message[];
   sendMessage: (conversationId: string, text: string, Image?: File) => void;
   sendReadReceipt: (conversationId: string, messageIds: string | string[]) => void;
+  addSystemMessage: (conversationId: string, text: string) => void;
   isConnected: boolean;
   connectionError: string | null;
   currentConversationId: string | null;
