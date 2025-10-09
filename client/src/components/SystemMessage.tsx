@@ -74,7 +74,7 @@ export const SystemMessage: React.FC<SystemMessageProps> = ({
     return null;
   }
 
-  let displayMessage = message || currentMessage;
+  const displayMessage = message || currentMessage;
 
   let iconClass = "";
   switch (type) {

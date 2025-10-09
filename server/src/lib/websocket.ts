@@ -36,7 +36,7 @@ async function getUserConversations(userId: string): Promise<Set<string>> {
         },
       });
 
-      dbConvs.forEach((conv) => {
+      dbConvs.forEach((conv: { id: string; participants: string[] }) => {
         Conversations.set(conv.id, new Set(conv.participants));
       });
 
@@ -61,7 +61,7 @@ async function getUserConversations(userId: string): Promise<Set<string>> {
       },
     });
 
-    dbConvs.forEach((conv) => {
+    dbConvs.forEach((conv: { id: string; participants: string[] }) => {
       convs!.add(conv.id);
       Conversations.set(conv.id, new Set(conv.participants));
     });

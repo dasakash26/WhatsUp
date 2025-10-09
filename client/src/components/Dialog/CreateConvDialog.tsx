@@ -105,11 +105,13 @@ export function CreateConvDialog() {
       );
       setOpen(false);
       await loadConversations();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create conversation:", error);
+      const errorMessage = error instanceof Error && 'response' in error 
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : undefined;
       toast.error(
-        error.response?.data?.message ||
-          "Failed to create conversation. Please try again."
+        errorMessage || "Failed to create conversation. Please try again."
       );
     } finally {
       setIsSubmitting(false);

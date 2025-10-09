@@ -17,6 +17,8 @@ import {
   Conversation,
   ChatContextType,
   User,
+  ApiConversationData,
+  TypingPayload,
 } from "@/types/websocket.types";
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -81,7 +83,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleWebSocketMessage = useCallback(
     (data: WebSocketMessage) => {
       const sender = data.senderId;
-      if (!onlineUsers.has(sender)) {
+      if (sender && !onlineUsers.has(sender)) {
         setOnlineUsers((prev) => new Set(prev).add(sender));
       }
 
@@ -205,7 +207,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           if (
             newMessage.senderId !== userId &&
             newMessage.conversationId === currentConversationId &&
-            wsSendMessageRef.current
+            wsSendMessageRef.current &&
+            userId
           ) {
             // Use setTimeout to ensure the message is processed before sending read receipt
             setTimeout(() => {
@@ -222,23 +225,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         case "TYPING": {
-          if (!data.userId || !data.conversationId) return;
+          const typingData = data as TypingPayload;
+          if (!typingData.userId || !typingData.conversationId) return;
 
           setTypingIndicators((prev) => {
             const filtered = prev.filter(
               (indicator) =>
                 !(
-                  indicator.userId === data.userId &&
-                  indicator.conversationId === data.conversationId
+                  indicator.userId === typingData.userId &&
+                  indicator.conversationId === typingData.conversationId
                 )
             );
 
-            return data.isTyping
+            return typingData.isTyping
               ? [
                   ...filtered,
                   {
-                    userId: data.userId,
-                    conversationId: data.conversationId,
+                    userId: typingData.userId,
+                    conversationId: typingData.conversationId,
                     isTyping: true,
                     lastTypingTime: new Date(),
                   },
@@ -246,8 +250,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
               : filtered;
           });
 
-          if (data.isTyping && data.userId !== userId) {
-            const key = `${data.userId}-${data.conversationId}`;
+          if (typingData.isTyping && typingData.userId !== userId) {
+            const key = `${typingData.userId}-${typingData.conversationId}`;
 
             if (typingTimeoutRef.current[key]) {
               clearTimeout(typingTimeoutRef.current[key]);
@@ -258,8 +262,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
                 prev.filter(
                   (indicator) =>
                     !(
-                      indicator.userId === data.userId &&
-                      indicator.conversationId === data.conversationId
+                      indicator.userId === typingData.userId &&
+                      indicator.conversationId === typingData.conversationId
                     )
                 )
               );
@@ -325,7 +329,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
     },
-    [userId, currentConversationId]
+    [userId, currentConversationId, onlineUsers]
   );
 
   const {
@@ -350,13 +354,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     );
     if (!conversation) return;
 
-    // const unreadMessageIds = conversation.messages
-    //   .filter((msg) => msg.senderId !== userId && msg.status !== "READ")
-    //   .map((msg) => msg.id as string);
-    const unreadMessageIds = conversation.messages[-1] &&
-      conversation.messages[-1].senderId !== userId &&
-      conversation.messages[-1].status !== "READ"
-      ? [conversation.messages[-1].id as string]
+    const lastMessage = conversation.messages[conversation.messages.length - 1];
+    const unreadMessageIds = lastMessage &&
+      lastMessage.senderId !== userId &&
+      lastMessage.status !== "READ"
+      ? [lastMessage.id as string]
       : [];
       
     if (unreadMessageIds.length > 0) {
@@ -369,7 +371,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       });
     }
     
-  }, [currentConversationId]);
+  }, [currentConversationId, conversations, userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -498,7 +500,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      const processedChats = data.map((chat: any) => ({
+      const processedChats = data.map((chat: ApiConversationData) => ({
         ...chat,
         messages: chat.messages || [],
         online: chat.online || false,

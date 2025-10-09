@@ -5,6 +5,7 @@ export type UserJwtPayload = {
   preferred_username?: string;
   image_url?: string;
   picture?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 };
 
@@ -14,6 +15,7 @@ export interface User {
   lastName?: string;
   username?: string | null;
   imageUrl?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -31,12 +33,35 @@ export type WebSocketMessageType =
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
+  senderId?: string;
+  userId?: string;
+  conversationId?: string;
+  timestamp?: string;
+  // Allow additional properties
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
+export interface IncomingMessage extends WebSocketMessage {
+  type: "MESSAGE";
+  conversationId: string;
+  text?: string;
+  image?: string;
+  id?: string;
+  senderId?: string;
+  senderName?: string;
+  senderUsername?: string;
+  senderAvatar?: string | null;
+  createdAt?: string;
+  tempMessageId?: string;
+  imageUrl?: string;
+}
+
 export interface MessagePayload extends WebSocketMessage {
+  type: "MESSAGE";
   conversationId: string;
   text: string;
+  image?: string;
 }
 
 export interface CompleteMessage extends WebSocketMessage {
@@ -54,18 +79,20 @@ export interface CompleteMessage extends WebSocketMessage {
 }
 
 export interface TypingPayload extends WebSocketMessage {
+  type: "TYPING";
   conversationId: string;
   isTyping: boolean;
   userId: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export interface ReadReceiptPayload extends WebSocketMessage {
+  type: "READ_RECEIPT";
   conversationId: string;
   messageId?: string; // Single message ID (deprecated, use messageIds)
   messageIds?: string[]; // Batch message IDs
   userId: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export type ConversationCache = {
@@ -74,20 +101,22 @@ export type ConversationCache = {
 };
 
 export interface ErrorPayload extends WebSocketMessage {
+  type: "ERROR";
   message: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export interface ConnectionEstablishedPayload extends WebSocketMessage {
+  type: "CONNECTION_ESTABLISHED";
   userId: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
 export interface OnlineStatusPayload extends WebSocketMessage {
+  type: "ONLINE_STATUS";
   userId: string;
   isOnline: boolean;
-  timestamp: Date;
-  type: "ONLINE_STATUS";
+  timestamp: string;
 }
 
 export enum MessageStatus {
@@ -119,7 +148,24 @@ export type Conversation = {
   messages: Message[];
   typingUsers?: string[];
   isOnline?: boolean;
+  isGroup?: boolean;
 };
+
+// Type for conversation data from API (before processing)
+export interface ApiConversationData {
+  id: string;
+  name: string;
+  participants: string[];
+  messages?: Message[];
+  online?: boolean;
+  unreadCount?: number;
+  lastMessage?: string;
+  lastMessageSenderName?: string;
+  lastMessageSenderUsername?: string;
+  lastMessageSenderAvatar?: string | null;
+  lastMessageTime?: string | Date;
+  isGroup?: boolean;
+}
 
 export interface ChatContextType {
   messages: Message[];
@@ -161,6 +207,7 @@ export interface ConversationAction {
 
 export interface OutGoingMessage{
   type: "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS" | "VIDEO_CALL_START";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 

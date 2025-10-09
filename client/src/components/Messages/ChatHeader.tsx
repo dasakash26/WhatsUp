@@ -22,6 +22,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Chat } from "@/types";
+import { User } from "@/types/websocket.types";
 import {
   Dialog,
   DialogContent,
@@ -59,8 +60,8 @@ export function ChatHeader({
   onStartVideoCall,
 }: ChatHeaderProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [groupParticipants, setGroupParticipants] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [groupParticipants, setGroupParticipants] = useState<User[]>([]);
   const { users, fetchUser, getUserFromId, reloadChats } = useChat();
   const { userId, getToken } = useAuth();
   const [activeTab, setActiveTab] = useState("about");
@@ -90,7 +91,7 @@ export function ChatHeader({
       }
       fetchGroupParticipants();
     }
-  }, [chat, userId, users, fetchUser, showDetails]);
+  }, [chat, userId, users, fetchUser, showDetails, getUserFromId]);
 
   const clearChatHistory = () => {
     setShowDeleteConfirm(true);

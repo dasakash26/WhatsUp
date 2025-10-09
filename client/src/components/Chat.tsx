@@ -28,7 +28,6 @@ export function Chat({
     conversations,
     messages,
     sendMessage,
-    addSystemMessage,
     currentConversationId,
     isConnected,
     connectionError,
@@ -66,8 +65,8 @@ export function Chat({
 
   const handleStartVideoCall = () => {
     if (currentConversation?.id) {
+      notifyVideoCallStart(currentConversation.id);
       setIsCallActive(true);
-      addSystemMessage(currentConversation.id, "📹 Video call started");
       setCallAlertMessage("Video call started");
       setShowCallAlert(true);
       setTimeout(() => setShowCallAlert(false), 3000);
@@ -77,7 +76,6 @@ export function Chat({
   const handleEndVideoCall = () => {
     if (currentConversation?.id) {
       setIsCallActive(false);
-      addSystemMessage(currentConversation.id, "📹 Video call ended");
       setCallAlertMessage("Video call ended");
       setShowCallAlert(true);
       setTimeout(() => setShowCallAlert(false), 3000);
@@ -95,13 +93,6 @@ export function Chat({
       setInputMessage("");
       inputRef.current?.focus();
     }
-  };
-
-  const handleStartVideoCall = () => {
-    if (currentConversation?.id) {
-      notifyVideoCallStart(currentConversation.id);
-    }
-    setIsCallActive(true);
   };
 
   useEffect(() => {
@@ -147,8 +138,8 @@ export function Chat({
   };
 
   const formattedMessages = conversationMessages.map((msg) => {
-    const validStatus = ["SENT", "DELIVERED", "READ", undefined];
-    const normalizedStatus = validStatus.includes(msg.status as any)
+    const validStatus: Array<"SENT" | "DELIVERED" | "READ" | undefined> = ["SENT", "DELIVERED", "READ", undefined];
+    const normalizedStatus = validStatus.includes(msg.status as "SENT" | "DELIVERED" | "READ" | undefined)
       ? (msg.status as "SENT" | "DELIVERED" | "READ" | undefined)
       : "SENT";
 
@@ -175,10 +166,10 @@ export function Chat({
     >
       {/* Global Alert */}
       {showCallAlert && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-md px-4">
-          <Alert variant="info" className="shadow-lg border-2">
-            <Video className="h-4 w-4" />
-            <AlertDescription className="font-medium">
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-md px-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Alert variant="info" className="shadow-xl border-2 backdrop-blur-sm bg-blue-50/90 dark:bg-blue-950/40">
+            <Video className="h-5 w-5" />
+            <AlertDescription className="font-medium text-base">
               {callAlertMessage}
             </AlertDescription>
           </Alert>
