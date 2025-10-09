@@ -96,7 +96,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           const newMessage: Message = {
             id: data.id as string,
             text: data.text as string,
-            status: "sent",
+            status: "SENT",
             senderId: data.senderId as string,
             senderName: data.senderName as string,
             senderUsername: data.senderUsername as string,
@@ -212,7 +212,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
               wsSendMessageRef.current?.({
                 type: "READ_RECEIPT",
                 conversationId: newMessage.conversationId,
-                messageId: newMessage.id,
+                messageIds: [newMessage.id],
                 userId: userId,
                 timestamp: new Date().toISOString(),
               });
@@ -299,14 +299,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
         case "READ_RECEIPT": {
           console.log("Received read receipt:", data);
-          const { messageId } = data;
+          const { messageIds, messageId } = data;
 
-          if (!messageId) return;
+          // Support both batch messageIds and single messageId
+          const idsToUpdate = messageIds && messageIds.length > 0 
+            ? messageIds 
+            : (messageId ? [messageId] : []);
+
+          if (idsToUpdate.length === 0) return;
 
           // Update the message status in the messages array
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === messageId ? { ...msg, status: "read" } : msg
+              idsToUpdate.includes(msg.id as string) ? { ...msg, status: "READ" } : msg
             )
           );
 
@@ -315,7 +320,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
             prevConversations.map((conv) => ({
               ...conv,
               messages: conv.messages.map((msg) =>
-                msg.id === messageId ? { ...msg, status: "read" } : msg
+                idsToUpdate.includes(msg.id as string) ? { ...msg, status: "READ" } : msg
               ),
             }))
           );
@@ -406,19 +411,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       if (conversation) {
         setMessages(conversation.messages);
         
-        // Send read receipts for messages from other users that are not already read
+        // Collect all unread message IDs from other users
         if (userId && wsSendMessageRef.current) {
-          conversation.messages.forEach((msg) => {
-            if (msg.senderId !== userId && msg.status !== "read") {
-              wsSendMessageRef.current?.({
-                type: "READ_RECEIPT",
-                conversationId: currentConversationId,
-                messageId: msg.id as string,
-                userId,
-                timestamp: new Date().toISOString(),
-              });
-            }
-          });
+          const unreadMessageIds = conversation.messages
+            .filter((msg) => msg.senderId !== userId && msg.status !== "READ")
+            .map((msg) => msg.id as string);
+
+          // Send a single batched read receipt for all unread messages
+          if (unreadMessageIds.length > 0) {
+            wsSendMessageRef.current?.({
+              type: "READ_RECEIPT",
+              conversationId: currentConversationId,
+              messageIds: unreadMessageIds,
+              userId,
+              timestamp: new Date().toISOString(),
+            });
+          }
         }
       }
     } else {
@@ -583,13 +591,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const sendReadReceipt = useCallback(
-    (conversationId: string, messageId: string) => {
+    (conversationId: string, messageIds: string | string[]) => {
       if (!userId) return;
+
+      const idsArray = Array.isArray(messageIds) ? messageIds : [messageIds];
 
       wsSendMessage({
         type: "READ_RECEIPT",
         conversationId,
-        messageId,
+        messageIds: idsArray,
         userId,
         timestamp: new Date().toISOString(),
       });

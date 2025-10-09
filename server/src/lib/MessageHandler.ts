@@ -55,25 +55,38 @@ export class MessageHandler {
 
   static async handleReadReceipt(message: any) {
     console.log("Handling read receipt:", message);
-    const { conversationId, messageId, userId } = message;
+    const { conversationId, messageId, messageIds, userId } = message;
     
-    if (!conversationId || !messageId || !userId) {
+    if (!conversationId || !userId) {
       console.error("Missing required fields for read receipt");
       return;
     }
 
+    // Support both single messageId and batch messageIds
+    const idsToUpdate = messageIds && messageIds.length > 0 
+      ? messageIds 
+      : (messageId ? [messageId] : []);
+
+    if (idsToUpdate.length === 0) {
+      console.error("No message IDs provided for read receipt");
+      return;
+    }
+
     try {
-      // Update the message status to READ
-      const updatedMessage = await prisma.message.update({
-        where: { id: messageId },
+      // Update all messages to READ in a single batch operation
+      await prisma.message.updateMany({
+        where: { 
+          id: { in: idsToUpdate },
+          conversationId: conversationId
+        },
         data: { status: "READ" },
       });
 
-      // Broadcast the read receipt to all participants in the conversation
+      // Broadcast a single read receipt for all messages
       const readReceiptPayload = {
         type: "READ_RECEIPT",
         conversationId,
-        messageId,
+        messageIds: idsToUpdate,
         userId,
         timestamp: new Date(),
       };

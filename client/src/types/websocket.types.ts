@@ -41,7 +41,7 @@ export interface MessagePayload extends WebSocketMessage {
 export interface CompleteMessage extends WebSocketMessage {
   id: string;
   text: string;
-  status: "sent" | "delivered" | "read" | "failed" | "system";
+  status: "SENT" | "DELIVERED" | "READ" | "FAILED" | "SYSTEM";
   senderId: string;
   senderName: string;
   senderUsername: string;
@@ -61,7 +61,8 @@ export interface TypingPayload extends WebSocketMessage {
 
 export interface ReadReceiptPayload extends WebSocketMessage {
   conversationId: string;
-  messageId: string;
+  messageId?: string; // Single message ID (deprecated, use messageIds)
+  messageIds?: string[]; // Batch message IDs
   userId: string;
   timestamp: Date;
 }
@@ -122,7 +123,7 @@ export type Conversation = {
 export interface ChatContextType {
   messages: Message[];
   sendMessage: (conversationId: string, text: string, Image?: File) => void;
-  sendReadReceipt: (conversationId: string, messageId: string) => void;
+  sendReadReceipt: (conversationId: string, messageIds: string | string[]) => void;
   isConnected: boolean;
   connectionError: string | null;
   currentConversationId: string | null;

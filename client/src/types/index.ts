@@ -6,7 +6,7 @@ export interface Message {
   senderUsername?: string | null;
   senderAvatar?: string | null;
   createdAt?: string;
-  status?: "SENT" | "DELIVERED" | "READ" | "sent" | "delivered" | "read";
+  status?: "SENT" | "DELIVERED" | "READ";
   image?: string | null;
   conversationId?: string;
 }
