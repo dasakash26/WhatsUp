@@ -50,7 +50,7 @@ export class MessageHandler {
     msg = { type: "MESSAGE", ...msg, tempMessageId };
     await broadcastInConv(conversationId, msg);
     //invalidate cache for this convo
-    // Cache.del(Cache.getConvIdKey(conversationId));
+    Cache.del(Cache.getConvIdKey(conversationId));
   }
 
   static handleTypingIndicator(message: any) {

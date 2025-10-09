@@ -61,7 +61,6 @@ app.get(
       return;
     }
 
-    // Try to get user from cache first
     const cacheKey = Cache.getUserKey(user_id as string);
     let user = await Cache.get(cacheKey);
 

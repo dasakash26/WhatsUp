@@ -14,11 +14,9 @@ const ONLINE_STATUS_INTERVAL = 5 * 60 * 1000; // 5 minutes
 export const Users: Map<string, User> = new Map(); // userId -> User
 const Conversations: Map<string, Set<string>> = new Map(); // conversationId -> Set<userId>
 
-/* -- HELPERS FUNCTIONS -- */
 async function getUserConversations(userId: string): Promise<Set<string>> {
   let convs: Set<string> | undefined;
 
-  // Try to get from cache
   const userConvIdsKey = Cache.getConvIdKey(userId);
   try {
     const cached = await Cache.get(userConvIdsKey);
