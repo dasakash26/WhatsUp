@@ -634,6 +634,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     [wsSendMessage, userId]
   );
 
+  const notifyVideoCallStart = useCallback(
+    (conversationId: string) => {
+      if (!userId) return;
+
+      wsSendMessage({
+        type: "VIDEO_CALL_START",
+        conversationId,
+        userId,
+        timestamp: new Date().toISOString(),
+      });
+    },
+    [wsSendMessage, userId]
+  );
+
   const isUserOnline = useCallback(
     (userId: string) => onlineUsers.has(userId),
     [onlineUsers]
@@ -655,6 +669,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         messages,
         sendMessage,
         sendReadReceipt,
+        notifyVideoCallStart,
         isConnected,
         connectionError,
         currentConversationId,

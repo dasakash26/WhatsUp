@@ -26,7 +26,8 @@ export type WebSocketMessageType =
   | "CONNECTION_ESTABLISHED"
   | "ONLINE_STATUS"
   | "REQUEST_ONLINE_STATUS"
-  | "SYSTEM_MESSAGE";
+  | "SYSTEM_MESSAGE"
+  | "VIDEO_CALL_START";
 
 export interface WebSocketMessage {
   type: WebSocketMessageType;
@@ -124,6 +125,7 @@ export interface ChatContextType {
   messages: Message[];
   sendMessage: (conversationId: string, text: string, Image?: File) => void;
   sendReadReceipt: (conversationId: string, messageIds: string | string[]) => void;
+  notifyVideoCallStart: (conversationId: string) => void;
   isConnected: boolean;
   connectionError: string | null;
   currentConversationId: string | null;
@@ -158,7 +160,7 @@ export interface ConversationAction {
 }
 
 export interface OutGoingMessage{
-  type: "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS";
+  type: "MESSAGE" | "TYPING" | "READ_RECEIPT" | "REQUEST_ONLINE_STATUS" | "VIDEO_CALL_START";
   [key: string]: any;
 }
 
