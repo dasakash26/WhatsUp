@@ -44,9 +44,9 @@ export class Cache {
   static getUserKey(userId: string) {
     return `user_${userId}`;
   }
-  
+
   static getConvKey(userId: string) {
-    return `user's_conversations_${userId}`;
+    return `user_conversations_${userId}`;
   }
 
   static getConvIdKey(userId: string) {

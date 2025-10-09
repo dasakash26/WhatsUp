@@ -2,33 +2,42 @@ import { REDIS_PASSWORD, REDIS_URL } from "../utils/secrets";
 import { createClient } from "redis";
 
 class RedisClient {
-    private static instance: RedisClient;
-    private client;
+  private static instance: RedisClient;
+  private client;
 
-    private constructor() {
-        this.client = createClient({
-            url: REDIS_URL,
-        });
+  private constructor() {
+    const clientOptions: any = {
+      url: REDIS_URL,
+    };
 
-        this.client.on("error", (err) => console.log("Redis Client Error", err));
-
-        this.client.connect().then(() => {
-            console.log("Connected to Redis");
-        }).catch((err) => {
-            console.error("Failed to connect to Redis", err);
-        });
+    if (REDIS_PASSWORD && !REDIS_URL.includes("@")) {
+      clientOptions.password = REDIS_PASSWORD;
     }
 
-    public static getInstance(): RedisClient {
-        if (!RedisClient.instance) {
-            RedisClient.instance = new RedisClient();
-        }
-        return RedisClient.instance;
-    }
+    this.client = createClient(clientOptions);
 
-    public getClient() {
-        return this.client;
+    this.client.on("error", (err) => console.log("Redis Client Error", err));
+
+    this.client
+      .connect()
+      .then(() => {
+        console.log("Connected to Redis");
+      })
+      .catch((err) => {
+        console.error("Failed to connect to Redis", err);
+      });
+  }
+
+  public static getInstance(): RedisClient {
+    if (!RedisClient.instance) {
+      RedisClient.instance = new RedisClient();
     }
+    return RedisClient.instance;
+  }
+
+  public getClient() {
+    return this.client;
+  }
 }
 
 export const redisClient = RedisClient.getInstance().getClient();
