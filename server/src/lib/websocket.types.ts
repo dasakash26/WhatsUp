@@ -65,7 +65,8 @@ export interface TypingPayload extends WebSocketMessage {
 
 export interface ReadReceiptPayload extends WebSocketMessage {
   conversationId: string;
-  messageId: string;
+  messageId?: string; // Single message ID (deprecated, use messageIds)
+  messageIds?: string[]; // Batch message IDs
   userId: string;
   timestamp: Date;
 }

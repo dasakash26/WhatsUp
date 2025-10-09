@@ -160,7 +160,7 @@ export function MessageBubble({
               {message.status === "SENT" && "✓"}
               {message.status === "DELIVERED" && "✓✓"}
               {message.status === "READ" && (
-                <span className="text-blue-200">✓✓</span>
+                <span className="text-green-400">✓✓</span>
               )}
             </span>
           </div>
