@@ -41,7 +41,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const { userId, getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const wsSendMessageRef = useRef<((message: WebSocketMessage) => boolean) | null>(null);
+  const wsSendMessageRef = useRef<
+    ((message: WebSocketMessage) => boolean) | null
+  >(null);
 
   useEffect(() => {
     console.log("Typing Indicators:", typingIndicators);
@@ -83,7 +85,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleWebSocketMessage = useCallback(
     (data: WebSocketMessage) => {
       const sender = data.senderId;
-      if (sender && !onlineUsers.has(sender)) {
+      if (sender) {
         setOnlineUsers((prev) => new Set(prev).add(sender));
       }
 
@@ -305,15 +307,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           console.log("Received read receipt:", data);
           const { messageIds, messageId } = data;
 
-          const idsToUpdate = messageIds && messageIds.length > 0 
-            ? messageIds 
-            : (messageId ? [messageId] : []);
+          const idsToUpdate =
+            messageIds && messageIds.length > 0
+              ? messageIds
+              : messageId
+              ? [messageId]
+              : [];
 
           if (idsToUpdate.length === 0) return;
 
           setMessages((prev) =>
             prev.map((msg) =>
-              idsToUpdate.includes(msg.id as string) ? { ...msg, status: "READ" } : msg
+              idsToUpdate.includes(msg.id as string)
+                ? { ...msg, status: "READ" }
+                : msg
             )
           );
 
@@ -321,7 +328,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
             prevConversations.map((conv) => ({
               ...conv,
               messages: conv.messages.map((msg) =>
-                idsToUpdate.includes(msg.id as string) ? { ...msg, status: "READ" } : msg
+                idsToUpdate.includes(msg.id as string)
+                  ? { ...msg, status: "READ" }
+                  : msg
               ),
             }))
           );
@@ -329,7 +338,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
     },
-    [userId, currentConversationId, onlineUsers]
+    [userId, currentConversationId]
   );
 
   const {
@@ -354,13 +363,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     );
     if (!conversation) return;
 
-    const lastMessage = conversation.messages[conversation.messages.length - 1];
-    const unreadMessageIds = lastMessage &&
-      lastMessage.senderId !== userId &&
-      lastMessage.status !== "READ"
-      ? [lastMessage.id as string]
-      : [];
-      
+    const unreadMessageIds = conversation.messages
+      .filter((msg) => msg.senderId !== userId && msg.status !== "READ")
+      .map((msg) => msg.id as string);
+
     if (unreadMessageIds.length > 0) {
       wsSendMessageRef.current?.({
         type: "READ_RECEIPT",
@@ -370,7 +376,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         timestamp: new Date().toISOString(),
       });
     }
-    
   }, [currentConversationId, conversations, userId]);
 
   useEffect(() => {
@@ -439,7 +444,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       if (conversation) {
         setMessages(conversation.messages);
-        
+
         // Collect all unread message IDs from other users
         if (userId && wsSendMessageRef.current) {
           const unreadMessageIds = conversation.messages
@@ -468,13 +473,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (savedConversationId) {
       setCurrentConversationId(savedConversationId);
     }
-  }, []);
+    return () => {
+      Object.values(typingTimeoutRef.current).forEach((timeout) => {
+        clearTimeout(timeout);
+      });
 
-  useEffect(() => {
-    if (currentConversationId) {
-      localStorage.setItem("lastConversationId", currentConversationId);
-    }
-  }, [currentConversationId]);
+      localStorage.setItem("lastConversationId", currentConversationId || "");
+    };
+  }, []);
 
   const loadConversations = useCallback(async () => {
     if (!userId) return;
@@ -529,14 +535,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       loadConversations();
     }
   }, [userId, loadConversations]);
-
-  useEffect(() => {
-    return () => {
-      Object.values(typingTimeoutRef.current).forEach((timeout) => {
-        clearTimeout(timeout);
-      });
-    };
-  }, []);
 
   const setTyping = useCallback(
     (conversationId: string, isTyping: boolean) => {

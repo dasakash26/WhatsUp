@@ -16,7 +16,7 @@ export const useWebSocket = ({ onMessage }: UseWebSocketOptions) => {
   const messageQueue = useRef<WebSocketMessage[]>([]);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isConnecting = useRef(false);
-  const RECONNECT_INTERVAL = 3000;
+  const RECONNECT_INTERVAL =3000;
 
   const connect = useCallback(async () => {
     if (

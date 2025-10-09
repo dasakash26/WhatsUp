@@ -134,7 +134,7 @@ export class MessageHandler {
       await broadcastInConv(conversationId, messagePayload);
       
       // Invalidate cache for this conversation
-      Cache.del(Cache.getConvKey(conversationId));
+      Cache.del(Cache.getConvIdKey(conversationId));
     } catch (error) {
       console.error("Error handling video call start:", error);
     }
