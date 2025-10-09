@@ -196,6 +196,17 @@ export const deleteConversationMessages = expressAsyncHandler(
       return;
     }
 
+    const conv = await prisma.conversation.findUnique({
+      where: {
+        id: conversationId as string,
+      },
+    });
+
+    if (!conv) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
+
     const messages = await prisma.message.deleteMany({
       where: {
         conversationId: conversationId as string,
@@ -214,6 +225,8 @@ export const deleteConversationMessages = expressAsyncHandler(
         conversationId: conversationId as string,
       },
     });
+
+    await Cache.invalidateConvAndMsgs(conv.participants, conversationId);
 
     res.status(200).json(message);
   }

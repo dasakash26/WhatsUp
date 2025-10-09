@@ -1,16 +1,17 @@
 import { redisClient } from "./redisClient";
 
 export class Cache {
-  static readonly CONV_TTL = 100;
-  static readonly MSG_TTL = 100;
+  static readonly CONV_TTL = 300; // 5 minutes
+  static readonly MSG_TTL = 300; // 5 minutes
+  static readonly USER_TTL = 3600; // 1 hour
 
   static async get(key: string) {
     try {
       const data = await redisClient.get(key);
-      return data ? JSON.parse(data) : [];
+      return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error(`Cache get error for key ${key}:`, error);
-      return [];
+      return null;
     }
   }
 

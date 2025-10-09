@@ -20,10 +20,9 @@ export const getConversations = expressAsyncHandler(
     const userId = req.auth.userId;
     const cacheKey = Cache.getConvKey(userId);
     const cachedData = await Cache.get(cacheKey);
-    console.log("Cached data:", cachedData, cachedData?.length);
 
     // Check if we have cached data
-    if (cachedData.length > 0) {
+    if (cachedData) {
       console.log("Returning conversations from cache");
       res.status(200).json(cachedData);
       return;
@@ -121,6 +120,11 @@ export const getConversation = expressAsyncHandler(
         id: conversationId as string,
       },
     });
+
+    if (!conversation) {
+      res.status(404).json({ error: "Conversation not found" });
+      return;
+    }
 
     res.status(200).json(conversation);
     return;
