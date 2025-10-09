@@ -1,7 +1,8 @@
 import { cn } from "@/lib/utils";
 import { Message } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ExternalLink } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ExternalLink, Info } from "lucide-react";
 import { useState, useCallback } from "react";
 
 interface MessageBubbleProps {
@@ -61,14 +62,17 @@ export function MessageBubble({
   if (message.senderId === "system") {
     return (
       <div className="flex justify-center py-2 px-4">
-        <div className="bg-muted/70 text-muted-foreground text-xs italic px-4 py-2 rounded-full max-w-md text-center">
-          {message.text}
-          {message.createdAt && (
-            <span className="ml-2 opacity-70">
-              {formatMessageTime(message.createdAt)}
-            </span>
-          )}
-        </div>
+        <Alert variant="info" className="max-w-md">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-center">
+            {message.text}
+            {message.createdAt && (
+              <span className="ml-2 opacity-70 text-xs">
+                {formatMessageTime(message.createdAt)}
+              </span>
+            )}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
