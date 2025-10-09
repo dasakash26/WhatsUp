@@ -9,6 +9,7 @@ import createWebSocketServer from "./lib/websocket";
 import { getUserFromId } from "./controllers/user.controller";
 import { StreamClient, StreamVideoClient } from "@stream-io/node-sdk";
 import expressAsyncHandler from "express-async-handler";
+import { Cache } from "./lib/cacheManager";
 
 const app = express();
 const server = http.createServer(app);
@@ -54,15 +55,23 @@ app.get(
   "/api/get-token",
   expressAsyncHandler(async (req, res) => {
     const { user_id } = req.query;
-    const user = await clerkClient.users.getUser(user_id as string);
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
 
     if (!user_id) {
       res.status(400).json({ error: "user_id is required" });
       return;
+    }
+
+    // Try to get user from cache first
+    const cacheKey = Cache.getUserKey(user_id as string);
+    let user = await Cache.get(cacheKey);
+
+    if (!user) {
+      user = await clerkClient.users.getUser(user_id as string);
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      await Cache.set(cacheKey, user, Cache.USER_TTL);
     }
 
     const newUser = {
