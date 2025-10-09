@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 import { TypingIndicator } from "./Messages/TypingIndicator";
 import VideoCall from "./videoCall/video";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { X, MessageCircle, ChevronDown, Video } from "lucide-react";
+import { X, MessageCircle, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
 
 interface ChatProps extends React.HTMLAttributes<HTMLDivElement> {
   onMobileMenuClick?: () => void;
@@ -40,8 +40,6 @@ export function Chat({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isCallActive, setIsCallActive] = useState(false);
   const [isChatOverlayOpen, setIsChatOverlayOpen] = useState(false);
-  const [showCallAlert, setShowCallAlert] = useState(false);
-  const [callAlertMessage, setCallAlertMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -67,18 +65,14 @@ export function Chat({
     if (currentConversation?.id) {
       notifyVideoCallStart(currentConversation.id);
       setIsCallActive(true);
-      setCallAlertMessage("Video call started");
-      setShowCallAlert(true);
-      setTimeout(() => setShowCallAlert(false), 3000);
+      toast.success("Video call started");
     }
   };
 
   const handleEndVideoCall = () => {
     if (currentConversation?.id) {
       setIsCallActive(false);
-      setCallAlertMessage("Video call ended");
-      setShowCallAlert(true);
-      setTimeout(() => setShowCallAlert(false), 3000);
+      toast.success("Video call ended");
     }
   };
 
@@ -138,8 +132,15 @@ export function Chat({
   };
 
   const formattedMessages = conversationMessages.map((msg) => {
-    const validStatus: Array<"SENT" | "DELIVERED" | "READ" | undefined> = ["SENT", "DELIVERED", "READ", undefined];
-    const normalizedStatus = validStatus.includes(msg.status as "SENT" | "DELIVERED" | "READ" | undefined)
+    const validStatus: Array<"SENT" | "DELIVERED" | "READ" | undefined> = [
+      "SENT",
+      "DELIVERED",
+      "READ",
+      undefined,
+    ];
+    const normalizedStatus = validStatus.includes(
+      msg.status as "SENT" | "DELIVERED" | "READ" | undefined
+    )
       ? (msg.status as "SENT" | "DELIVERED" | "READ" | undefined)
       : "SENT";
 
@@ -164,18 +165,6 @@ export function Chat({
       )}
       {...props}
     >
-      {/* Global Alert */}
-      {showCallAlert && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-md px-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <Alert variant="info" className="shadow-xl border-2 backdrop-blur-sm bg-blue-50/90 dark:bg-blue-950/40">
-            <Video className="h-5 w-5" />
-            <AlertDescription className="font-medium text-base">
-              {callAlertMessage}
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-
       <ChatHeader
         chat={chatForHeader}
         onMobileMenuClick={onMobileMenuClick}

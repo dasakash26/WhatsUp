@@ -6,7 +6,7 @@ import { Cache } from "./cacheManager";
 export class MessageHandler {
   static async handleMessage(sender: User, message: any) {
     const data = JSON.parse(message.toString()) as WebSocketMessage;
-    // console.log("Received data:", data);
+    console.log("Received data:", data);
     switch (data.type) {
       case "MESSAGE":
         this.handleChatMessage(sender, data as IncomingMessage);
@@ -29,7 +29,7 @@ export class MessageHandler {
   }
 
   static async handleChatMessage(sender: User, payload: IncomingMessage) {
-    const { conversationId, text, image } = payload;
+    const { conversationId, text, image, tempMessageId } = payload;
     if (!conversationId) {
       console.error("conversationId is required for chat message");
       return;
@@ -47,11 +47,11 @@ export class MessageHandler {
         conversationId,
       },
     });
-    msg = { type: "MESSAGE", ...msg };
+    msg = { type: "MESSAGE", ...msg, tempMessageId };
     await broadcastInConv(conversationId, msg);
     //invalidate cache for this convo
-    Cache.del(Cache.getConvIdKey(conversationId));
-}
+    // Cache.del(Cache.getConvIdKey(conversationId));
+  }
 
   static handleTypingIndicator(message: any) {
     console.log("Handling typing indicator:", message);
@@ -61,16 +61,19 @@ export class MessageHandler {
   static async handleReadReceipt(message: any) {
     console.log("Handling read receipt:", message);
     const { conversationId, messageId, messageIds, userId } = message;
-    
+
     if (!conversationId || !userId) {
       console.error("Missing required fields for read receipt");
       return;
     }
 
     // Support both single messageId and batch messageIds
-    const idsToUpdate = messageIds && messageIds.length > 0 
-      ? messageIds 
-      : (messageId ? [messageId] : []);
+    const idsToUpdate =
+      messageIds && messageIds.length > 0
+        ? messageIds
+        : messageId
+        ? [messageId]
+        : [];
 
     if (idsToUpdate.length === 0) {
       console.error("No message IDs provided for read receipt");
@@ -80,9 +83,9 @@ export class MessageHandler {
     try {
       // Update all messages to READ in a single batch operation
       await prisma.message.updateMany({
-        where: { 
+        where: {
           id: { in: idsToUpdate },
-          conversationId: conversationId
+          conversationId: conversationId,
         },
         data: { status: "READ" },
       });
@@ -95,7 +98,7 @@ export class MessageHandler {
         userId,
         timestamp: new Date(),
       };
-      
+
       await broadcastInConv(conversationId, readReceiptPayload);
     } catch (error) {
       console.error("Error handling read receipt:", error);
@@ -109,7 +112,7 @@ export class MessageHandler {
   static async handleVideoCallStart(sender: User, message: any) {
     console.log("Handling video call start:", message);
     const { conversationId } = message;
-    
+
     if (!conversationId) {
       console.error("conversationId is required for video call start");
       return;
@@ -132,9 +135,9 @@ export class MessageHandler {
       // Broadcast to all participants in the conversation
       const messagePayload = { type: "MESSAGE", ...systemMessage };
       await broadcastInConv(conversationId, messagePayload);
-      
+
       // Invalidate cache for this conversation
-      Cache.del(Cache.getConvIdKey(conversationId));
+      // Cache.del(Cache.getConvIdKe(conversationId));
     } catch (error) {
       console.error("Error handling video call start:", error);
     }

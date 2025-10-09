@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Message } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ExternalLink, Info } from "lucide-react";
 import { useState, useCallback } from "react";
 
@@ -62,17 +61,17 @@ export function MessageBubble({
   if (message.senderId === "system") {
     return (
       <div className="flex justify-center py-2 px-4">
-        <Alert variant="info" className="max-w-md">
+        <div className="max-w-md p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-800 flex items-center gap-2">
           <Info className="h-4 w-4" />
-          <AlertDescription className="text-center">
+          <div className="text-center">
             {message.text}
             {message.createdAt && (
               <span className="ml-2 opacity-70 text-xs">
                 {formatMessageTime(message.createdAt)}
               </span>
             )}
-          </AlertDescription>
-        </Alert>
+          </div>
+        </div>
       </div>
     );
   }
@@ -161,6 +160,7 @@ export function MessageBubble({
           <div className="flex items-center justify-end gap-2 mt-2 text-xs opacity-75 ">
             <span>{formatMessageTime(message.createdAt)}</span>
             <span>
+              {message.status === "PENDING" && "🕓"}
               {message.status === "SENT" && "✓"}
               {message.status === "DELIVERED" && "✓✓"}
               {message.status === "READ" && (

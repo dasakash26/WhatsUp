@@ -11,7 +11,6 @@ import { api } from "@/lib/api";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {
   WebSocketMessage,
-  MessagePayload,
   Message,
   TypingIndicator,
   Conversation,
@@ -20,6 +19,7 @@ import {
   ApiConversationData,
   TypingPayload,
 } from "@/types/websocket.types";
+import { toast } from "sonner";
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
@@ -113,6 +113,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           };
 
           console.log("Processing received message:", newMessage);
+          if (newMessage.senderId == "system") {
+            toast.info(newMessage.text, { duration: 5000 });
+            return;
+          }
 
           setMessages((prev) => {
             const tempIndex = prev.findIndex(
@@ -141,6 +145,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
             const existingIndex = prev.findIndex(
               (msg) => msg.id === newMessage.id
             );
+
             if (existingIndex !== -1) {
               return prev;
             }
@@ -445,13 +450,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       if (conversation) {
         setMessages(conversation.messages);
 
-        // Collect all unread message IDs from other users
         if (userId && wsSendMessageRef.current) {
           const unreadMessageIds = conversation.messages
             .filter((msg) => msg.senderId !== userId && msg.status !== "READ")
             .map((msg) => msg.id as string);
 
-          // Send a single batched read receipt for all unread messages
           if (unreadMessageIds.length > 0) {
             wsSendMessageRef.current?.({
               type: "READ_RECEIPT",
@@ -605,14 +608,46 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       setTyping(conversationId, false);
-      const message: MessagePayload = {
+      // const message: MessagePayload = {
+      //   type: "MESSAGE",
+      //   conversationId,
+      //   text: text || "Image",
+      //   ...(imageUrl && { image: imageUrl }),
+      // };
+      //Optimistic UI update
+      const tempMessage: Message = {
+        type: "MESSAGE",
+        status: "PENDING",
+        id: `temp-${Date.now()}`,
+        tempMessageId: `temp-${Date.now()}`,
+        text: text || "",
+        senderId: userId,
+        senderName: "You",
+        senderUsername: "you",
+        senderAvatar: "https://www.gravatar.com/avatar?d=mp",
+        conversationId,
+        createdAt: new Date(),
+        image: imageUrl,
+      };
+
+      console.log("Sending WebSocket message:", tempMessage);
+      setMessages((prev) => [...prev, tempMessage]);
+
+      setConversations((prevConversations) =>
+        prevConversations.map((conv) =>
+          conv.id === conversationId
+            ? { ...conv, messages: [...conv.messages, tempMessage] }
+            : conv
+        )
+      );
+
+      wsSendMessage({
         type: "MESSAGE",
         conversationId,
         text: text || "Image",
         ...(imageUrl && { image: imageUrl }),
-      };
-      console.log("Sending WebSocket message:", message);
-      wsSendMessage(message);
+        tempMessageId: tempMessage.tempMessageId,
+      });
     },
     [setTyping, userId, wsSendMessage, getToken]
   );

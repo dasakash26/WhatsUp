@@ -111,6 +111,7 @@ export interface IncomingMessage{
   type: IncomingMessageTypes;
   conversationId: string;
   text: string;
+  tempMessageId?: string;
   [key: string]: any;
 }
 

@@ -67,7 +67,7 @@ export interface MessagePayload extends WebSocketMessage {
 export interface CompleteMessage extends WebSocketMessage {
   id: string;
   text: string;
-  status: "SENT" | "DELIVERED" | "READ" | "FAILED" | "SYSTEM";
+  status: "PENDING"|"SENT" | "DELIVERED" | "READ" | "FAILED" | "SYSTEM";
   senderId: string;
   senderName: string;
   senderUsername: string;
@@ -120,6 +120,7 @@ export interface OnlineStatusPayload extends WebSocketMessage {
 }
 
 export enum MessageStatus {
+  SENDING = "SENDING",
   SENT = "SENT",
   DELIVERED = "DELIVERED",
   READ = "READ",
