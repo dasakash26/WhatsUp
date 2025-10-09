@@ -34,8 +34,10 @@ export const ChatListItem = ({
           setUser(otherUser);
         } else {
           async function fetchUserData() {
-            const res = await fetchUser(otherParticipant);
-            if (res) setUser(res);
+            if (otherParticipant) {
+              const res = await fetchUser(otherParticipant);
+              if (res) setUser(res);
+            }
           }
           fetchUserData();
         }
@@ -111,10 +113,10 @@ export const ChatListItem = ({
     return "Someone: ";
   };
 
-  const formatTime = (time: string | null) => {
+  const formatTime = (time: string | Date | null | undefined) => {
     if (!time) return "";
     try {
-      const date = new Date(time);
+      const date = typeof time === 'string' ? new Date(time) : time;
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
