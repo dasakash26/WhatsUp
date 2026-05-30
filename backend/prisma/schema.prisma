@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships ChatMember[]
+  messages    Message[]
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+model Chat {
+  id                String    @id @default(cuid())
+  name              String?
+  description       String?
+  displayPictureUrl String?
+  lastMessageId     String?   @unique
+  lastMessageAt     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  members     ChatMember[]
+  messages    Message[]    @relation("ChatMessages")
+  lastMessage Message?     @relation("ChatLastMessage", fields: [lastMessageId], references: [id], onDelete: SetNull)
+
+  @@index([lastMessageAt])
+}
+
+model ChatMember {
+  id         String    @id @default(cuid())
+  chatId     String
+  userId     String
+  role       Role      @default(MEMBER)
+  tag        String?
+  joinedAt   DateTime  @default(now())
+  lastReadAt DateTime?
+  mutedAt    DateTime?
+
+  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  MEMBER
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  chatId    String
+  userId    String
+  content   String?
+  mediaUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  chat           Chat  @relation("ChatMessages", fields: [chatId], references: [id], onDelete: Cascade)
+  user           User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastMessageFor Chat? @relation("ChatLastMessage")
+
+  @@index([chatId])
+  @@index([userId])
+  @@index([chatId, createdAt])
+}
