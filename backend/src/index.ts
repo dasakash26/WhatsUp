@@ -1,52 +1,43 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
-import http, { get } from "http";
+import http from "http";
 import conversationRoutes from "./routes/conversation.routes";
 import messageRoutes from "./routes/message.routes";
 import { PORT, STREAM_API_KEY, STREAM_API_SECRET } from "./utils/secrets";
 import { clerkClient, requireAuth } from "@clerk/express";
 import createWebSocketServer from "./lib/websocket";
 import { getUserFromId } from "./controllers/user.controller";
-import { StreamClient, StreamVideoClient } from "@stream-io/node-sdk";
+import { StreamClient } from "@stream-io/node-sdk";
 import expressAsyncHandler from "express-async-handler";
 import { Cache } from "./lib/cacheManager";
+import clerkWebhookRouter from "./modules/user/clerk-webhook";
+import morgan from "morgan";
 
 const app = express();
 const server = http.createServer(app);
 
-createWebSocketServer(server);
-
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://client:5173",
-      "http://client:3001",
-      "https://whatsup-chat.onrender.com",
-      "http://localhost:4173",
-      "ws://whatsup-chat.onrender.com",
-      "wss://whatsup-chat.onrender.com",
-      "https://whatsup.akashd.online",
-    ],
+    origin: ["*"],
     credentials: true,
-  })
+  }),
 );
+
+app.use(morgan("dev"));
+
+app.use("/api/webhook/clerk", clerkWebhookRouter);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
-  // Log the request path and method
-  console.log(`> ${req.method} ${req.path}`);
-  next();
-});
+createWebSocketServer(server);
 
 app.use("/api/conversation", requireAuth(), conversationRoutes);
 app.use("/api/message", requireAuth(), messageRoutes);
 app.get("/api/user/:userId", requireAuth(), getUserFromId);
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("WhatsUp backend is running");
 });
 
 const client = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
@@ -91,7 +82,7 @@ app.get(
       token,
     });
     return;
-  })
+  }),
 );
 
 server.listen(PORT, () => {

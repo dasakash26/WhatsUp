@@ -11,14 +11,14 @@ services:
       - db_data:/var/lib/postgresql/data
     networks:
       - app-net
-  
+
   prisma-studio:
     image: node:lts-alpine3.17
     working_dir: /app
     volumes:
-      - ./server:/app
+      - ./backend:/app
       - /app/node_modules
-    command: sh -c "npx prisma studio --hostname 0.0.0.0 --port 5555" 
+    command: sh -c "npx prisma studio --hostname 0.0.0.0 --port 5555"
     ports:
       - "5555:5555"
     environment:
@@ -36,15 +36,19 @@ services:
 
   server:
     build:
-      context: ./server
+      context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "4001:4001"
+      - "4000:4000"
     volumes:
-      - ./server:/app
+      - ./backend:/app
       - /app/node_modules
     env_file:
-      - ./server/.env
+      - ./backend/.env
+    environment:
+      NODE_ENV: development
+    tty: true
+    stdin_open: true
     depends_on:
       - pg_db
       - redis

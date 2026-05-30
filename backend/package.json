@@ -3,6 +3,11 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "prisma:generate": "bunx prisma generate"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/pg": "^8.20.0",
@@ -12,9 +17,21 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@clerk/express": "^2.1.22",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "@stream-io/node-sdk": "^0.7.59",
+    "@types/cors": "^2.8.19",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
+    "cloudinary": "^2.10.0",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "pg": "^8.21.0"
+    "express-async-handler": "^1.2.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "pg": "^8.21.0",
+    "redis": "^6.0.0"
   }
 }
