@@ -4,7 +4,7 @@ import {
   deleteUser,
   extractUserFromEventData,
   upsertUser,
-} from "./user.services";
+} from "./user.service";
 
 const router = Router();
 
@@ -29,7 +29,8 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
         if (id) await deleteUser(id);
         break;
       default:
-        throw Error("Unhandled Webhook Event");
+        console.log(`Ignoring webhook event: ${eventType}`);
+        break;
     }
 
     return res.send("Webhook received");

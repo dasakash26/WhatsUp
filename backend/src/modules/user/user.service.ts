@@ -1,7 +1,7 @@
 import type { UserJSON } from "@clerk/express";
 import { prisma } from "../../lib/prisma";
 
-interface clerkUser {
+interface ClerkUser {
   clerkId: string;
   email: string;
   firstName: string | null;
@@ -9,7 +9,7 @@ interface clerkUser {
   imageUrl: string;
 }
 
-export function extractUserFromEventData(data: UserJSON): clerkUser {
+export function extractUserFromEventData(data: UserJSON): ClerkUser {
   const primaryEmail = data.email_addresses.find(
     (email) => email.id === data.primary_email_address_id,
   );
@@ -36,7 +36,7 @@ export async function upsertUser({
   firstName,
   lastName,
   imageUrl,
-}: clerkUser) {
+}: ClerkUser) {
   const res = await prisma.user.upsert({
     where: {
       clerkId: clerkId,
@@ -59,11 +59,18 @@ export async function upsertUser({
 }
 
 export async function deleteUser(clerkId: string) {
-  const res = prisma.user.delete({
+  return await prisma.user.update({
     where: {
       clerkId,
     },
+    data: {
+      deletedAt: new Date(),
+    },
   });
+}
 
-  return res;
+export async function getUserFromlerkId(clerkId: string) {
+  return await prisma.user.findUnique({
+    where: { clerkId },
+  });
 }

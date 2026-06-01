@@ -40,7 +40,7 @@ export const getConversationMessages = expressAsyncHandler(
 
     res.status(200).json(resp);
     return;
-  }
+  },
 );
 
 export const createMessage = expressAsyncHandler(
@@ -88,7 +88,7 @@ export const createMessage = expressAsyncHandler(
 
     res.status(200).json(msg);
     return;
-  }
+  },
 );
 
 export const updateMessage = expressAsyncHandler(
@@ -133,13 +133,13 @@ export const updateMessage = expressAsyncHandler(
     if (conv) {
       await Cache.invalidateConvAndMsgs(
         conv.participants,
-        existingMsg.conversationId
+        existingMsg.conversationId,
       );
     }
 
     res.status(200).json(msg);
     return;
-  }
+  },
 );
 
 export const deleteMessage = expressAsyncHandler(
@@ -180,7 +180,7 @@ export const deleteMessage = expressAsyncHandler(
 
     res.status(200).json({ message: "Message deleted successfully" });
     return;
-  }
+  },
 );
 
 //Delete all messages in a conversation
@@ -229,5 +229,5 @@ export const deleteConversationMessages = expressAsyncHandler(
     await Cache.invalidateConvAndMsgs(conv.participants, conversationId);
 
     res.status(200).json(message);
-  }
+  },
 );
