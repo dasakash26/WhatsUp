@@ -8,6 +8,7 @@ import {
   updateMessageById,
 } from "./message.service";
 import { requireChatRole, requireCurrentUser } from "../auth/auth.service";
+import { AppError } from "../../utils/app-error";
 
 export async function listMessages(
   req: Request<{ chatId: string }>,
@@ -17,8 +18,7 @@ export async function listMessages(
   const { chatId } = req.params;
 
   if (!chatId) {
-    res.status(400).json({ error: "chat ID is required" });
-    return;
+    throw new AppError(400, "chat ID is required");
   }
 
   await requireChatRole(chatId, userId);
@@ -42,7 +42,7 @@ export async function sendMessage(
   const image = req.file;
 
   if (!chatId || (!content && !image)) {
-    return res.status(400).json({ error: "chat ID and content is required" });
+    throw new AppError(400, "chat ID and content is required");
   }
 
   await requireChatRole(chatId, userId);
@@ -68,12 +68,11 @@ export async function editMessage(
   const { content } = req.body;
 
   if (!messageId) {
-    res.status(400).json({ error: "Message ID is required" });
-    return;
+    throw new AppError(400, "Message ID is required");
   }
 
   if (!content) {
-    return res.status(400).json({ error: "content or image is required" });
+    throw new AppError(400, "content or image is required");
   }
 
   await requireUserMessage(userId, messageId);
@@ -94,8 +93,7 @@ export async function removeMessage(
   const { messageId } = req.params;
 
   if (!messageId) {
-    res.status(400).json({ error: "Message ID is required" });
-    return;
+    throw new AppError(400, "Message ID is required");
   }
 
   await requireUserMessage(userId, messageId);
@@ -112,8 +110,7 @@ export async function clearChatMessages(
   const { chatId } = req.params;
 
   if (!chatId) {
-    res.status(400).json({ error: "chat ID is required" });
-    return;
+    throw new AppError(400, "chat ID is required");
   }
 
   await requireChatRole(chatId, userId, ["ADMIN", "SUPERADMIN"]);

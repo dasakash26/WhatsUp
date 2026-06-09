@@ -1,6 +1,14 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/app-error";
 
+const userDetails = {
+  id: true,
+  clerkId: true,
+  firstName: true,
+  lastName: true,
+  imageUrl: true,
+};
+
 export async function findMessagesByChatId(chatId: string) {
   return await prisma.message.findMany({
     where: {
@@ -8,13 +16,7 @@ export async function findMessagesByChatId(chatId: string) {
     },
     include: {
       user: {
-        select: {
-          id: true,
-          clerkId: true,
-          firstName: true,
-          lastName: true,
-          imageUrl: true,
-        },
+        select: userDetails,
       },
     },
     orderBy: {
@@ -35,13 +37,7 @@ export async function createChatMessage(data: CreateChatMessageInput) {
     data: { ...data },
     include: {
       user: {
-        select: {
-          id: true,
-          clerkId: true,
-          firstName: true,
-          lastName: true,
-          imageUrl: true,
-        },
+        select: userDetails,
       },
     },
   });
