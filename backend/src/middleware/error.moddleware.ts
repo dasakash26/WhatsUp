@@ -1,7 +1,7 @@
-import type { ErrorHandler } from "hono";
+import type { Context } from "hono";
 import { AppError } from "../utils/app-error";
 
-export const errorHandler: ErrorHandler = (err, c) => {
+export function errorHandler(err: Error, c: Context) {
   console.error(err);
 
   if (err instanceof AppError) {
@@ -19,4 +19,4 @@ export const errorHandler: ErrorHandler = (err, c) => {
     },
     500,
   );
-};
+}

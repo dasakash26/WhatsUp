@@ -1,20 +1,27 @@
-app.get("/api/get-token", async (req, res) => {
-  const { user_id } = req.query;
+import { Hono, type Context } from "hono";
+import { StreamClient } from "@stream-io/node-sdk";
+import { STREAM_API_KEY, STREAM_API_SECRET } from "../../utils/secrets";
+import { AppError } from "../../utils/app-error";
 
-  if (!user_id) {
-    res.status(400).json({ error: "user_id is required" });
-    return;
+const client = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
+const router = new Hono();
+
+export async function getCallToken(c: Context) {
+  const userId = c.req.query("user_id");
+
+  if (!userId) {
+    throw new AppError(400, "user_id is required");
   }
 
   try {
-    const user = await clerkClient.users.getUser(user_id as string);
+    const clerkClient = c.get("clerk");
+    const user = await clerkClient.users.getUser(userId);
     if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
+      throw new AppError(404, "User not found");
     }
 
     const newUser = {
-      id: user_id as string,
+      id: userId,
       role: "user",
       name: user.fullName || user.username || "Unknown User",
       image:
@@ -24,15 +31,21 @@ app.get("/api/get-token", async (req, res) => {
 
     await client.upsertUsers([newUser]);
 
-    const token = client.generateUserToken({ user_id: user_id as string });
-    res.status(200).json({
-      apiKey: STREAM_API_KEY,
-      userId: user_id,
-      token,
-    });
-    return;
+    const token = client.generateUserToken({ user_id: userId });
+    return c.json(
+      {
+        apiKey: STREAM_API_KEY,
+        userId,
+        token,
+      },
+      200,
+    );
   } catch (error) {
-    res.status(404).json({ error: "User not found" });
-    return;
+    console.error("Error generating call token:", error);
+    throw new AppError(500, "Failed to generate call token");
   }
-});
+}
+
+router.get("/get-token", getCallToken);
+
+export default router;

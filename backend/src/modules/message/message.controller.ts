@@ -1,4 +1,4 @@
-import type { Handler } from "hono";
+import type { Context } from "hono";
 import {
   createChatMessage,
   deleteMessageById,
@@ -11,7 +11,7 @@ import { requireChatRole, requireCurrentUser } from "../auth/auth.service";
 import { AppError } from "../../utils/app-error";
 import { uploadToCloudinary } from "../../utils/cloudinary";
 
-export const listMessages: Handler = async (c) => {
+export async function listMessages(c: Context) {
   const { id: userId } = await requireCurrentUser(c);
   const chatId = c.req.param("chatId");
 
@@ -30,9 +30,9 @@ export const listMessages: Handler = async (c) => {
     },
     200,
   );
-};
+}
 
-export const sendMessage: Handler = async (c) => {
+export async function sendMessage(c: Context) {
   const { id: userId } = await requireCurrentUser(c);
   const chatId = c.req.param("chatId");
 
@@ -65,9 +65,9 @@ export const sendMessage: Handler = async (c) => {
   });
 
   return c.json({ message }, 201);
-};
+}
 
-export const editMessage: Handler = async (c) => {
+export async function editMessage(c: Context) {
   const { id: userId } = await requireCurrentUser(c);
   const messageId = c.req.param("messageId");
 
@@ -95,9 +95,9 @@ export const editMessage: Handler = async (c) => {
   });
 
   return c.json({ message }, 200);
-};
+}
 
-export const removeMessage: Handler = async (c) => {
+export async function removeMessage(c: Context) {
   const { id: userId } = await requireCurrentUser(c);
   const messageId = c.req.param("messageId");
 
@@ -109,9 +109,9 @@ export const removeMessage: Handler = async (c) => {
   await deleteMessageById(messageId);
 
   return c.json({ message: "Message deleted successfully" }, 200);
-};
+}
 
-export const clearChatMessages: Handler = async (c) => {
+export async function clearChatMessages(c: Context) {
   const { id: userId } = await requireCurrentUser(c);
   const chatId = c.req.param("chatId");
 
@@ -130,4 +130,4 @@ export const clearChatMessages: Handler = async (c) => {
     },
     200,
   );
-};
+}
