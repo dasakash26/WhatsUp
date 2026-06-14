@@ -14,5 +14,5 @@ bun run index.ts
 
 ## TODO:
 
-- chat module
+- port to hono
 - socket module

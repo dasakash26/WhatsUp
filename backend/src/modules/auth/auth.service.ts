@@ -1,11 +1,11 @@
-import type { Request } from "express";
-import { getAuth } from "@clerk/express";
 import { AppError } from "../../utils/app-error";
 import { prisma } from "../../lib/prisma";
 import type { Role } from "../../../generated/prisma/enums";
+import { getAuth } from "@clerk/hono";
+import type { Context } from "hono";
 
-export async function requireCurrentUser(req: Request) {
-  const { userId: clerkId } = getAuth(req);
+export async function requireCurrentUser(c: Context) {
+  const { userId: clerkId } = getAuth(c);
 
   if (!clerkId) throw new AppError(403, "unauthorized");
 

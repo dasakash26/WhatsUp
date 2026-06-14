@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Hono } from "hono";
 import {
   clearChatMessages,
   editMessage,
@@ -6,13 +6,12 @@ import {
   removeMessage,
   sendMessage,
 } from "./message.controller";
-import { upload } from "../../middleware/multer.middleware";
 
-const router = Router();
+const router = new Hono();
 
 router.get("/:chatId", listMessages);
-router.post("/:chatId", upload.single("image"), sendMessage);
-router.patch("/:messageId", upload.single("image"), editMessage);
+router.post("/:chatId", sendMessage);
+router.patch("/:messageId", editMessage);
 router.delete("/:messageId", removeMessage);
 router.delete("/:chatId/all", clearChatMessages);
 

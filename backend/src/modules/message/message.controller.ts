@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Handler } from "hono";
 import {
   createChatMessage,
   deleteMessageById,
@@ -9,13 +9,11 @@ import {
 } from "./message.service";
 import { requireChatRole, requireCurrentUser } from "../auth/auth.service";
 import { AppError } from "../../utils/app-error";
+import { uploadToCloudinary } from "../../utils/cloudinary";
 
-export async function listMessages(
-  req: Request<{ chatId: string }>,
-  res: Response,
-) {
-  const { id: userId } = await requireCurrentUser(req);
-  const { chatId } = req.params;
+export const listMessages: Handler = async (c) => {
+  const { id: userId } = await requireCurrentUser(c);
+  const chatId = c.req.param("chatId");
 
   if (!chatId) {
     throw new AppError(400, "chat ID is required");
@@ -25,21 +23,28 @@ export async function listMessages(
 
   const messages = await findMessagesByChatId(chatId);
 
-  return res.status(200).json({
-    messages: messages,
-    length: messages.length,
-  });
-}
+  return c.json(
+    {
+      messages: messages,
+      length: messages.length,
+    },
+    200,
+  );
+};
 
-export async function sendMessage(
-  req: Request<{ chatId: string }>,
-  res: Response,
-) {
-  const { id: userId } = await requireCurrentUser(req);
+export const sendMessage: Handler = async (c) => {
+  const { id: userId } = await requireCurrentUser(c);
+  const chatId = c.req.param("chatId");
 
-  const { chatId } = req.params;
-  const { content } = req.body;
-  const image = req.file;
+  let body;
+  try {
+    body = await c.req.parseBody();
+  } catch {
+    throw new AppError(400, "Failed to parse body");
+  }
+
+  const content = body.content as string | undefined;
+  const image = body.image as File | undefined;
 
   if (!chatId || (!content && !image)) {
     throw new AppError(400, "chat ID and content is required");
@@ -47,32 +52,39 @@ export async function sendMessage(
 
   await requireChatRole(chatId, userId);
 
-  const mediaUrl = image ? image.path || image.filename : null;
+  let mediaUrl: string | null = null;
+  if (image && image.size > 0) {
+    mediaUrl = await uploadToCloudinary(image);
+  }
 
   const message = await createChatMessage({
     chatId,
     userId,
-    content,
+    content: content || null,
     mediaUrl,
   });
 
-  return res.status(201).json({ message });
-}
+  return c.json({ message }, 201);
+};
 
-export async function editMessage(
-  req: Request<{ messageId: string }>,
-  res: Response,
-) {
-  const { id: userId } = await requireCurrentUser(req);
-  const { messageId } = req.params;
-  const { content } = req.body;
+export const editMessage: Handler = async (c) => {
+  const { id: userId } = await requireCurrentUser(c);
+  const messageId = c.req.param("messageId");
+
+  let body;
+  try {
+    body = await c.req.parseBody();
+  } catch {
+    throw new AppError(400, "Failed to parse body");
+  }
+  const content = body["content"] as string | undefined;
 
   if (!messageId) {
     throw new AppError(400, "Message ID is required");
   }
 
   if (!content) {
-    throw new AppError(400, "content or image is required");
+    throw new AppError(400, "content is required");
   }
 
   await requireUserMessage(userId, messageId);
@@ -82,15 +94,12 @@ export async function editMessage(
     content,
   });
 
-  return res.status(200).json({ message });
-}
+  return c.json({ message }, 200);
+};
 
-export async function removeMessage(
-  req: Request<{ messageId: string }>,
-  res: Response,
-) {
-  const { id: userId } = await requireCurrentUser(req);
-  const { messageId } = req.params;
+export const removeMessage: Handler = async (c) => {
+  const { id: userId } = await requireCurrentUser(c);
+  const messageId = c.req.param("messageId");
 
   if (!messageId) {
     throw new AppError(400, "Message ID is required");
@@ -99,15 +108,12 @@ export async function removeMessage(
   await requireUserMessage(userId, messageId);
   await deleteMessageById(messageId);
 
-  return res.status(200).json({ message: "Message deleted successfully" });
-}
+  return c.json({ message: "Message deleted successfully" }, 200);
+};
 
-export async function clearChatMessages(
-  req: Request<{ chatId: string }>,
-  res: Response,
-) {
-  const { id: userId } = await requireCurrentUser(req);
-  const { chatId } = req.params;
+export const clearChatMessages: Handler = async (c) => {
+  const { id: userId } = await requireCurrentUser(c);
+  const chatId = c.req.param("chatId");
 
   if (!chatId) {
     throw new AppError(400, "chat ID is required");
@@ -117,8 +123,11 @@ export async function clearChatMessages(
 
   const result = await deleteMessagesByChatId(chatId);
 
-  return res.status(200).json({
-    message: "Messages deleted successfully",
-    count: result.count,
-  });
-}
+  return c.json(
+    {
+      message: "Messages deleted successfully",
+      count: result.count,
+    },
+    200,
+  );
+};

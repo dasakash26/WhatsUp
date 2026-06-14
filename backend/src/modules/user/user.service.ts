@@ -1,4 +1,4 @@
-import type { UserJSON } from "@clerk/express";
+import type { UserJSON } from "@clerk/backend";
 import { prisma } from "../../lib/prisma";
 
 interface ClerkUser {

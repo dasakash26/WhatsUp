@@ -1,17 +1,22 @@
-import type { ErrorRequestHandler } from "express";
+import type { ErrorHandler } from "hono";
 import { AppError } from "../utils/app-error";
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+export const errorHandler: ErrorHandler = (err, c) => {
   console.error(err);
 
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      error: err.message,
-    });
-    return;
+    return c.json(
+      {
+        error: err.message,
+      },
+      err.statusCode,
+    );
   }
 
-  res.status(500).json({
-    error: "Internal Server Error",
-  });
+  return c.json(
+    {
+      error: "Internal Server Error",
+    },
+    500,
+  );
 };

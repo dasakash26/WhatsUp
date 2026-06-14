@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Hono } from "hono";
 import {
   createChat,
   deleteChat,
@@ -7,7 +7,7 @@ import {
   updateChat,
 } from "./chat.controller";
 
-const router = Router();
+const router = new Hono();
 
 router.get("/", getChats);
 router.post("/", createChat);

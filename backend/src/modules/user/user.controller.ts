@@ -1,26 +1,19 @@
-import type { Request, Response } from "express";
-import { clerkClient } from "@clerk/express";
 import { AppError } from "../../utils/app-error";
+import type { Context } from "hono";
 
-export async function getUserFromId(
-  req: Request<{ userId: string }>,
-  res: Response
-) {
-  const { userId } = req.params;
+export async function getUserFromId(c: Context) {
+  const userId = c.req.param("userId");
+  const clerkClient = c.get("clerk");
 
   if (!userId) {
     throw new AppError(400, "user ID is required");
   }
 
-  try {
-    const user = await clerkClient.users.getUser(userId);
-    
-    if (!user) {
-      throw new AppError(404, "User not found");
-    }
+  const user = await clerkClient.users.getUser(userId);
 
-    return res.status(200).json(user);
-  } catch (error) {
+  if (!user) {
     throw new AppError(404, "User not found");
   }
+
+  return c.json(user, 200);
 }

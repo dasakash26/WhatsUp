@@ -1,17 +1,18 @@
-import { verifyWebhook } from "@clerk/express/webhooks";
-import { Router, raw } from "express";
 import {
   deleteUser,
   extractUserFromEventData,
   upsertUser,
 } from "./user.service";
+import { Context, Hono } from "hono";
+import { verifyWebhook } from "@clerk/hono/webhooks";
+import { AppError } from "../../utils/app-error";
 
-const router = Router();
+const router = new Hono();
 
-router.post("/", raw({ type: "application/json" }), async (req, res) => {
+router.post("/", async (c: Context) => {
   try {
     console.log("hit webhook");
-    const evt = await verifyWebhook(req);
+    const evt = await verifyWebhook(c);
     const { id } = evt.data;
     const eventType = evt.type;
 
@@ -33,10 +34,10 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
         break;
     }
 
-    return res.send("Webhook received");
+    return c.text("Webhook received");
   } catch (err) {
     console.error("Error verifying webhook:", err);
-    return res.status(400).send("Error verifying webhook");
+    throw new AppError(500, "Error verifying webhook:");
   }
 });
 
