@@ -81,7 +81,10 @@ export async function createNewChat(data: CreateChatInput) {
       data: memberData,
     });
 
-    return newChat;
+    return await tx.chat.findUnique({
+      where: { id: newChat.id },
+      include: { members: true },
+    });
   });
 }
 

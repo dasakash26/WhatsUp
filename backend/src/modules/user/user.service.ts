@@ -74,3 +74,9 @@ export async function getUserFromlerkId(clerkId: string) {
     where: { clerkId },
   });
 }
+
+export async function getUserByEmail(email: string) {
+  return await prisma.user.findUnique({
+    where: { email, deletedAt: null },
+  });
+}
