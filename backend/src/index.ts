@@ -15,8 +15,13 @@ import { clerkMiddleware } from "@clerk/hono";
 
 const app = new Hono();
 
-app.use(cors(), logger(), clerkMiddleware());
-// if (process.env.NODE_ENV != "test") app.use(logger());
+app.use(cors());
+
+// if (process.env.NODE_ENV === "development") {
+app.use(logger());
+// }
+
+app.use(clerkMiddleware());
 
 app.route("/api/webhook/clerk", clerkWebhookRouter);
 

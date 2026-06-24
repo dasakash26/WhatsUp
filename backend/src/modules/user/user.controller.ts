@@ -26,6 +26,11 @@ export async function getUserByEmail(c: Context) {
     throw new AppError(400, "email is required");
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new AppError(400, "Invalid email format");
+  }
+
   const user = await findUserByEmail(email);
 
   if (!user) {

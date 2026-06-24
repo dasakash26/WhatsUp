@@ -34,8 +34,8 @@ export async function createChat(c: Context) {
   const user = await requireCurrentUser(c);
   const { name, participants } = await c.req.json();
 
-  if (!participants || participants.length === 0) {
-    throw new AppError(400, "Participants are required");
+  if (!participants || !Array.isArray(participants) || participants.length === 0) {
+    throw new AppError(400, "Participants are required and must be an array");
   }
 
   const chat = await createNewChat({

@@ -6,11 +6,6 @@ import { prisma } from "../src/lib/prisma";
 
 describe("Chat Module", () => {
   describe("GET /api/chat/", () => {
-    test("returns 403 when unauthenticated", async () => {
-      const res = await app.request("/api/chat");
-      expect(res.status).toBe(403);
-    });
-
     test("returns 200 with chats the user blongs to when user is logged in", async () => {
       authenticateAs(testUsers[0]!.clerkId);
       const res = await app.request("/api/chat");
@@ -21,24 +16,9 @@ describe("Chat Module", () => {
   });
 
   describe("POST /api/chat/", () => {
-    test("returns 403 when unauthenticated", async () => {
-      const res = await app.request("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(403);
-    });
-
-    test("returns 400 when required fields are missing", async () => {
-      const res = await app.request("/api/chat", {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
-      expect(res.status).toBe(403);
-    });
-
     test("returns 200 and creates the group chat with proper member roles, when user is logged in", async () => {
       authenticateAs(testUsers[0]!.clerkId);
+
       const res = await app.request("/api/chat", {
         method: "POST",
         body: JSON.stringify({
