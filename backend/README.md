@@ -14,5 +14,5 @@ bun run index.ts
 
 ## TODO:
 
-- port to hono
-- socket module
+- chain routes, for types in client rpc
+- create hono ws, and implement using bun pubsub

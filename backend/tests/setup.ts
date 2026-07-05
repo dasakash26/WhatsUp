@@ -3,6 +3,7 @@ import { prisma } from "../src/lib/prisma";
 import type { User } from "../generated/prisma/browser";
 
 export let clerkId: string | null = null;
+export let testServer: any;
 
 export function authenticateAs(id: string | null) {
   clerkId = id;
@@ -18,6 +19,15 @@ mock.module("@clerk/hono", () => ({
   getAuth: (c: any) => ({
     userId: c.get("clerkAuth")?.userId || null,
   }),
+}));
+
+mock.module("@clerk/backend", () => ({
+  verifyToken: async (token: string, _: any) => {
+    if (token === "mock-token") {
+      return { sub: testUsers[0]?.clerkId }; 
+    }
+    throw new Error("Invalid mock token");
+  },
 }));
 
 export const testUsers: {
@@ -50,6 +60,14 @@ export let seededTestUsers: User[];
 
 beforeAll(async () => {
   try {
+    const serverConfig = (await import("../src")).default;
+
+    testServer = Bun.serve({
+      fetch: serverConfig.fetch,
+      websocket: serverConfig.websocket,
+      port: 0,
+    });
+
     const users = testUsers.map((tu) => prisma.user.create({ data: tu }));
     seededTestUsers = await Promise.all(users);
   } catch (error) {
@@ -60,6 +78,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   try {
+    testServer?.stop();
+
     const delUsers = testUsers.map((tu) =>
       prisma.user.deleteMany({
         where: {

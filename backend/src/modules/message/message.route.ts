@@ -7,12 +7,11 @@ import {
   sendMessage,
 } from "./message.controller";
 
-const router = new Hono();
-
-router.get("/:chatId", listMessages);
-router.post("/:chatId", sendMessage);
-router.patch("/:messageId", editMessage);
-router.delete("/:messageId", removeMessage);
-router.delete("/:chatId/all", clearChatMessages);
+const router = new Hono()
+  .get("/:chatId", listMessages)
+  .post("/:chatId", sendMessage)
+  .patch("/:messageId", editMessage)
+  .delete("/:messageId", removeMessage)
+  .delete("/:chatId/all", clearChatMessages);
 
 export default router;

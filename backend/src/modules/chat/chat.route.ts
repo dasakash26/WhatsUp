@@ -7,12 +7,11 @@ import {
   updateChat,
 } from "./chat.controller";
 
-const router = new Hono();
-
-router.get("/", getChats);
-router.post("/", createChat);
-router.get("/:chatId", getChat);
-router.put("/:chatId", updateChat);
-router.delete("/:chatId", deleteChat);
+const router = new Hono()
+  .get("/", getChats)
+  .post("/", createChat)
+  .get("/:chatId", getChat)
+  .put("/:chatId", updateChat)
+  .delete("/:chatId", deleteChat);
 
 export default router;

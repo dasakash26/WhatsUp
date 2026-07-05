@@ -18,7 +18,6 @@ describe("Chat Module", () => {
   describe("POST /api/chat/", () => {
     test("returns 200 and creates the group chat with proper member roles, when user is logged in", async () => {
       authenticateAs(testUsers[0]!.clerkId);
-
       const res = await app.request("/api/chat", {
         method: "POST",
         body: JSON.stringify({
@@ -27,6 +26,7 @@ describe("Chat Module", () => {
         }),
       });
       authenticateAs(null);
+
       expect(res.status).toBe(200);
 
       const body = await res.json();

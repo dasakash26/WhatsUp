@@ -2,7 +2,7 @@ import type { Context } from "hono";
 import { AppError } from "../utils/app-error";
 
 export function errorHandler(err: Error, c: Context) {
-  console.error(err);
+  // console.error(err);
 
   if (err instanceof AppError) {
     return c.json(
