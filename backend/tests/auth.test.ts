@@ -1,36 +1,24 @@
 import { describe, expect, test } from "bun:test";
 import app from "../src";
 
-const modules: Record<
-  string,
-  { method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; path: string }[]
-> = {
-  chat: [
-    { method: "GET", path: "" },
-    { method: "POST", path: "" },
-    { method: "GET", path: "/123" },
-    { method: "PUT", path: "/123" },
-    { method: "DELETE", path: "/123" },
-  ],
-  message: [
-    { method: "GET", path: "/123" },
-    { method: "POST", path: "/123" },
-    { method: "PATCH", path: "/123" },
-    { method: "DELETE", path: "/123" },
-    { method: "DELETE", path: "/123/all" },
-  ],
-};
+const endpoints: { method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; path: string }[] = [
+  { method: "GET", path: "/api/chat" },
+  { method: "POST", path: "/api/chat" },
+  { method: "GET", path: "/api/chat/123" },
+  { method: "PUT", path: "/api/chat/123" },
+  { method: "DELETE", path: "/api/chat/123" },
+  { method: "GET", path: "/api/message/123" },
+  { method: "POST", path: "/api/message/123" },
+  { method: "PATCH", path: "/api/message/123" },
+  { method: "DELETE", path: "/api/message/123" },
+  { method: "DELETE", path: "/api/message/123/all" },
+];
 
-describe("Security Gatekeeper Tests", () => {
-  for (const [module, endpoints] of Object.entries(modules)) {
-    describe(`${module.toUpperCase()} MODULE`, () => {
-      for (const { method, path } of endpoints) {
-        const route = `/api/${module}${path}`;
-        test(`${method} ${route} - returns 403 when unauthenticated`, async () => {
-          const res = await app.request(route, { method });
-          expect(res.status).toBe(403);
-        });
-      }
+describe("Security Tests", () => {
+  for (const { method, path } of endpoints) {
+    test(`${method} ${path} - should return 403 when unauthenticated`, async () => {
+      const res = await app.request(path, { method });
+      expect(res.status).toBe(403);
     });
   }
 });

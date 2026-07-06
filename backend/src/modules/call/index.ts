@@ -4,7 +4,6 @@ import { STREAM_API_KEY, STREAM_API_SECRET } from "../../utils/secrets";
 import { AppError } from "../../utils/app-error";
 
 const client = new StreamClient(STREAM_API_KEY, STREAM_API_SECRET);
-const router = new Hono();
 
 export async function getCallToken(c: Context) {
   const userId = c.req.query("user_id");
@@ -46,6 +45,7 @@ export async function getCallToken(c: Context) {
   }
 }
 
-router.get("/get-token", getCallToken);
+const router = new Hono()
+  .get("/get-token", getCallToken);
 
 export default router;

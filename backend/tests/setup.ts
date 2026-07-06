@@ -1,61 +1,13 @@
-import { afterAll, beforeAll, mock } from "bun:test";
+import { afterAll, beforeAll } from "bun:test";
 import { prisma } from "../src/lib/prisma";
 import type { User } from "../generated/prisma/browser";
+import { hc } from "hono/client";
+import type { AppType } from "../src/";
 
-export let clerkId: string | null = null;
+import { testUsers } from "./mocks";
+
 export let testServer: any;
-
-export function authenticateAs(id: string | null) {
-  clerkId = id;
-}
-
-mock.module("@clerk/hono", () => ({
-  clerkMiddleware: () => async (c: any, next: any) => {
-    if (clerkId) {
-      c.set("clerkAuth", { userId: clerkId });
-    }
-    await next();
-  },
-  getAuth: (c: any) => ({
-    userId: c.get("clerkAuth")?.userId || null,
-  }),
-}));
-
-mock.module("@clerk/backend", () => ({
-  verifyToken: async (token: string, _: any) => {
-    if (token === "mock-token") {
-      return { sub: testUsers[0]?.clerkId }; 
-    }
-    throw new Error("Invalid mock token");
-  },
-}));
-
-export const testUsers: {
-  clerkId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-}[] = [
-  {
-    clerkId: "user_007",
-    email: "user7@example.com",
-    firstName: "Test7",
-    lastName: "User",
-  },
-  {
-    clerkId: "user_008",
-    email: "user8@example.com",
-    firstName: "Test8",
-    lastName: "User",
-  },
-  {
-    clerkId: "user_009",
-    email: "user9@example.com",
-    firstName: "Test9",
-    lastName: "User9",
-  },
-];
-
+export let client: any;
 export let seededTestUsers: User[];
 
 beforeAll(async () => {
@@ -67,6 +19,8 @@ beforeAll(async () => {
       websocket: serverConfig.websocket,
       port: 0,
     });
+
+    client = hc<AppType>(`http://localhost:${testServer.port}/`);
 
     const users = testUsers.map((tu) => prisma.user.create({ data: tu }));
     seededTestUsers = await Promise.all(users);
